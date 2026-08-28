@@ -1,0 +1,22 @@
+{
+  "short_name": "KiranaFlow",
+  "name": "KiranaFlow | Kirana Store Operations & Digital Ordering",
+  "description": "Digital Ordering and Live Store Operations Platform for Indian Kirana Stores",
+  "icons": [
+    {
+      "src": "pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
