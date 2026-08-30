@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { OrderPdfModal } from '../../components/common/OrderPdfModal';
+import { downloadOrderPdf } from '../../utils/pdfDownloader';
 import { CheckCircle2, Clock, MapPin, ArrowLeft, Download } from 'lucide-react';
 
 export const OrderSuccessView = ({ order, onBackToStore }) => {
-  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDirectDownload = async () => {
+    try {
+      setDownloading(true);
+      await downloadOrderPdf(order, order.storeId);
+    } catch (err) {
+      alert('Failed to download PDF bill');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -48,13 +59,14 @@ export const OrderSuccessView = ({ order, onBackToStore }) => {
           </div>
         </div>
 
-        {/* PDF Download Button */}
+        {/* Direct PDF Download Button */}
         <button
-          onClick={() => setShowPdfModal(true)}
-          className="w-full py-2.5 bg-green-50 text-green-700 active:bg-green-100 border border-green-200 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95"
+          onClick={handleDirectDownload}
+          disabled={downloading}
+          className="w-full py-2.5 bg-green-50 text-green-700 active:bg-green-100 border border-green-200 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
-          Download PDF Order Slip
+          {downloading ? 'Generating PDF...' : 'Download PDF Bill Directly'}
         </button>
 
         <button
@@ -65,14 +77,6 @@ export const OrderSuccessView = ({ order, onBackToStore }) => {
           Return to Store Catalog
         </button>
       </div>
-
-      {/* PDF Modal */}
-      <OrderPdfModal
-        order={order}
-        store={order.storeId}
-        isOpen={showPdfModal}
-        onClose={() => setShowPdfModal(false)}
-      />
     </div>
   );
 };

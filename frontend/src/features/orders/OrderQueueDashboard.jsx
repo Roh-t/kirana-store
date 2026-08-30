@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { orderService } from '../../services/orderService';
 import { billingService } from '../../services/billingService';
 import { whatsappService } from '../../services/whatsappService';
+import { downloadOrderPdf } from '../../utils/pdfDownloader';
 import { InvoiceReceiptModal } from '../billing/InvoiceReceiptModal';
 import { PaymentModal } from '../payments/PaymentModal';
-import { OrderPdfModal } from '../../components/common/OrderPdfModal';
 import {
   ShoppingBag,
   BellRing,
@@ -32,7 +32,6 @@ export const OrderQueueDashboard = ({ storeId }) => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
-  const [pdfOrder, setPdfOrder] = useState(null);
 
   const prevPendingCount = useRef(0);
 
@@ -137,6 +136,14 @@ export const OrderQueueDashboard = ({ storeId }) => {
       window.open(res.data.whatsappUrl, '_blank');
     } catch (err) {
       alert(err.message || 'Failed to generate WhatsApp link');
+    }
+  };
+
+  const handleDirectPdfDownload = async (order) => {
+    try {
+      await downloadOrderPdf(order, order.storeId);
+    } catch (err) {
+      alert('Failed to download PDF bill');
     }
   };
 
@@ -296,7 +303,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                   ))}
                 </div>
 
-                {/* Action Buttons */}
+                {/* Action Buttons Bar */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
                   <div>
                     <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
@@ -327,7 +334,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     {order.orderStatus === 'PACKING' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'READY')}
-                        className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
+                        className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
                         Ready
@@ -345,9 +352,9 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     )}
 
                     <button
-                      onClick={() => setPdfOrder(order)}
+                      onClick={() => handleDirectPdfDownload(order)}
                       className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
-                      title="PDF Order Slip"
+                      title="Direct PDF Download"
                     >
                       <FileText className="w-3.5 h-3.5 text-gray-700" />
                     </button>
@@ -410,16 +417,6 @@ export const OrderQueueDashboard = ({ storeId }) => {
           order={paymentOrder}
           onClose={() => setPaymentOrder(null)}
           onSuccess={() => fetchQueue(false)}
-        />
-      )}
-
-      {/* Shared Order PDF Slip Modal */}
-      {pdfOrder && (
-        <OrderPdfModal
-          order={pdfOrder}
-          store={pdfOrder.storeId}
-          isOpen={!!pdfOrder}
-          onClose={() => setPdfOrder(null)}
         />
       )}
     </div>
