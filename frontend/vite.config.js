@@ -1,11 +1,12 @@
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(),
-          tailwindcss(),
+    tailwindcss(),
   ],
+  base: './', // <--- Fixes asset loading on Render
   server: {
     port: 5173,
     proxy: {
