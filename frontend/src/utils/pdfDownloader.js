@@ -1,89 +1,80 @@
-export const downloadOrderPdf = async (order, store) => {
-  // 1. Dynamically load html2pdf.js library if not present
-  if (!window.html2pdf) {
-    await new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.onload = resolve;
-      document.body.appendChild(script);
-    });
-  }
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-  // 2. Build off-screen HTML receipt
-  const element = document.createElement('div');
-  element.style.padding = '20px';
-  element.style.fontFamily = 'Arial, sans-serif';
-  element.style.width = '550px';
+export const downloadOrderPdf = (order, store) => {
+  const doc = new jsPDF();
 
-  element.innerHTML = `
-    <div style="border: 2px solid #16a34a; padding: 20px; border-radius: 12px; background: #ffffff;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">
-        <div>
-          <h1 style="color: #15803d; margin: 0; font-size: 20px; font-weight: 900; text-transform: uppercase;">${store?.name || 'Kirana Store'}</h1>
-          <p style="margin: 4px 0 0 0; color: #4b5563; font-size: 11px;">${store?.address?.street || ''}, ${store?.address?.city || ''}</p>
-          <p style="margin: 2px 0 0 0; color: #4b5563; font-size: 11px;">Ph: ${store?.phone || ''}</p>
-        </div>
-        <div style="text-align: right;">
-          <h2 style="margin: 0; color: #111827; font-size: 15px; font-weight: 900;">${order.orderNumber}</h2>
-          <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 10px;">Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-          <span style="display: inline-block; margin-top: 4px; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${order.orderStatus}</span>
-        </div>
-      </div>
+  // Header Green Banner
+  doc.setFillColor(22, 163, 74);
+  doc.rect(0, 0, 210, 28, 'F');
 
-      <div style="margin-top: 12px; background: #f9fafb; padding: 10px; border-radius: 8px; font-size: 11px;">
-        <p style="margin: 0; font-weight: bold; color: #1f2937;">Customer: ${order.customerDetails?.name || ''} (${order.customerDetails?.phone || ''})</p>
-        <p style="margin: 4px 0 0 0; color: #4b5563;">Fulfillment: <strong>${order.orderType}</strong> ${order.customerDetails?.deliveryAddress ? '• ' + order.customerDetails.deliveryAddress : ''}</p>
-      </div>
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(store?.name || 'Kirana Store', 14, 18);
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px;">
-        <thead>
-          <tr style="background: #f3f4f6; text-align: left; font-weight: bold; border-bottom: 2px solid #e5e7eb;">
-            <th style="padding: 8px;">Item Name</th>
-            <th style="padding: 8px; text-align: center;">Qty</th>
-            <th style="padding: 8px; text-align: right;">Price</th>
-            <th style="padding: 8px; text-align: right;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${order.items
-            .map(
-              (item) => `
-            <tr style="border-bottom: 1px solid #f3f4f6;">
-              <td style="padding: 8px; font-weight: bold;">${item.nameSnapshot}<br/><span style="font-size: 9px; color: #9ca3af; font-weight: normal;">${item.unitSnapshot}</span></td>
-              <td style="padding: 8px; text-align: center; font-weight: bold;">${item.quantity}</td>
-              <td style="padding: 8px; text-align: right; color: #6b7280;">₹${item.sellingPriceSnapshot}</td>
-              <td style="padding: 8px; text-align: right; font-weight: bold; color: #111827;">₹${item.lineGrandTotal}</td>
-            </tr>
-          `
-            )
-            .join('')}
-        </tbody>
-      </table>
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Ph: ${store?.phone || ''} | GSTIN: ${store?.taxConfig?.gstin || 'N/A'}`, 14, 24);
 
-      <div style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 10px;">
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #4b5563;">
-          <span>Subtotal:</span> <span>₹${order.subTotal}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; color: #15803d; margin-top: 4px; border-top: 1px solid #bbf7d0; padding-top: 4px;">
-          <span>Grand Total Payable:</span> <span>₹${order.grandTotal}</span>
-        </div>
-      </div>
+  // Order Details
+  doc.setTextColor(17, 24, 39);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Order #: ${order.orderNumber}`, 14, 38);
 
-      <div style="margin-top: 15px; text-align: center; color: #9ca3af; font-size: 9px; border-top: 1px dashed #e5e7eb; padding-top: 8px;">
-        <p style="margin: 0; font-weight: bold; color: #4b5563;">Thank you for ordering with us!</p>
-        <p style="margin: 2px 0 0 0;">Official Digital Bill powered by KiranaFlow SaaS</p>
-      </div>
-    </div>
-  `;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 140, 38);
+  doc.text(`Status: ${order.orderStatus}`, 140, 44);
 
-  const options = {
-    margin: 8,
-    filename: `${order.orderNumber}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  // Customer Details Box
+  doc.setDrawColor(229, 231, 235);
+  doc.setFillColor(249, 250, 251);
+  doc.roundedRect(14, 50, 182, 20, 3, 3, 'FD');
 
-  // 3. Generate and download PDF directly to user's device
-  await window.html2pdf().set(options).from(element).save();
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Customer: ${order.customerDetails?.name || ''} (${order.customerDetails?.phone || ''})`, 18, 58);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Fulfillment: ${order.orderType} ${order.customerDetails?.deliveryAddress ? '• ' + order.customerDetails.deliveryAddress : ''}`, 18, 64);
+
+  // Items Table
+  const tableRows = order.items.map((item, index) => [
+    index + 1,
+    item.nameSnapshot,
+    item.unitSnapshot,
+    `Rs. ${item.sellingPriceSnapshot}`,
+    item.quantity,
+    `Rs. ${item.lineGrandTotal}`
+  ]);
+
+  autoTable(doc, {
+    startY: 76,
+    head: [['#', 'Item Name', 'Unit', 'Price', 'Qty', 'Total']],
+    body: tableRows,
+    headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontStyle: 'bold' },
+    styles: { fontSize: 10, cellPadding: 3.5 }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 10;
+
+  // Grand Total Summary Box
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(187, 247, 208);
+  doc.roundedRect(120, finalY, 76, 16, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(21, 128, 61);
+  doc.text(`Grand Total: Rs. ${order.grandTotal}`, 125, finalY + 11);
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(156, 163, 175);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Thank you for ordering with us!', 105, finalY + 28, { align: 'center' });
+  doc.text('Official Digital Bill powered by KiranaFlow SaaS', 105, finalY + 33, { align: 'center' });
+
+  // Native Direct PDF Download
+  doc.save(`${order.orderNumber}.pdf`);
 };
