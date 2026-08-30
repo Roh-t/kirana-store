@@ -12,4 +12,8 @@ router.get('/queue', OrderController.getOrderQueue);
 router.get('/:id', OrderController.getOrderById);
 router.patch('/:id/status', OrderController.updateOrderStatus);
 
+// Add route in backend/src/modules/orders/order.route.js
+
+router.patch('/:id/items', OrderController.modifyOrderItems);
+
 export default router;

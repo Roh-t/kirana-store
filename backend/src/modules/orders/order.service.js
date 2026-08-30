@@ -303,4 +303,65 @@ export class OrderService {
     }
     return order;
   }
+
+  // Add inside OrderService class in backend/src/modules/orders/order.service.js
+
+static async modifyOrderItems(storeId, userId, orderId, updatedItems, reason) {
+  const order = await Order.findOne({ _id: orderId, storeId });
+  if (!order) {
+    throw ApiError.notFound('Order not found');
+  }
+
+  if (['COMPLETED', 'CANCELLED'].includes(order.orderStatus)) {
+    throw ApiError.badRequest('Cannot modify items of completed or cancelled orders.');
+  }
+
+  let subTotal = 0;
+  let taxTotal = 0;
+  const newSnapshottedItems = [];
+
+  for (const item of updatedItems) {
+    const product = await Product.findOne({ _id: item.productId, storeId, isDeleted: false });
+    if (!product) continue;
+
+    const lineSubTotal = product.sellingPrice * item.quantity;
+    const lineTaxAmount = (lineSubTotal * product.taxRate) / 100;
+    const lineGrandTotal = lineSubTotal + lineTaxAmount;
+
+    subTotal += lineSubTotal;
+    taxTotal += lineTaxAmount;
+
+    newSnapshottedItems.push({
+      productId: product._id,
+      nameSnapshot: product.name,
+      unitSnapshot: `${product.unitQuantity} ${product.unit}`,
+      mrpSnapshot: product.mrp,
+      sellingPriceSnapshot: product.sellingPrice,
+      purchasePriceSnapshot: product.purchasePrice || 0,
+      taxRateSnapshot: product.taxRate || 0,
+      quantity: item.quantity,
+      lineSubTotal,
+      lineTaxAmount,
+      lineGrandTotal
+    });
+  }
+
+  order.items = newSnapshottedItems;
+  order.subTotal = subTotal;
+  order.taxTotal = taxTotal;
+  order.grandTotal = subTotal + taxTotal;
+  order.notes = reason ? `[Item Adjusted: ${reason}] ${order.notes || ''}` : order.notes;
+
+  await order.save();
+
+  // Record Audit Trail
+  await AuditService.recordLog(storeId, userId, 'ORDER_ITEMS_MODIFIED', 'Order', order._id, {
+    orderNumber: order.orderNumber,
+    newGrandTotal: order.grandTotal,
+    reason
+  });
+
+  return order;
 }
+}
+

@@ -22,5 +22,16 @@ export const orderService = {
       { status, cancellationReason },
       { headers: { 'X-Store-Id': storeId } }
     );
-  }
+  },
+
+  async modifyOrderItems(storeId, orderId, items, reason = '') {
+  return apiClient.patch(
+    `/orders/${orderId}/items`,
+    { items, reason },
+    { headers: { 'X-Store-Id': storeId } }
+  );
+}
+  
+
+  
 };

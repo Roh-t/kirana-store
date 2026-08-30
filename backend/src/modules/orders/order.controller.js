@@ -68,4 +68,27 @@ export class OrderController {
       next(error);
     }
   }
+
+  // Add inside OrderController class in backend/src/modules/orders/order.controller.js
+
+static async modifyOrderItems(req, res, next) {
+  try {
+    const { items, reason } = req.body;
+    const updatedOrder = await OrderService.modifyOrderItems(
+      req.storeId,
+      req.user._id,
+      req.params.id,
+      items,
+      reason
+    );
+
+    return ApiResponse.success(res, {
+      statusCode: 200,
+      message: 'Order items adjusted successfully',
+      data: updatedOrder
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 }

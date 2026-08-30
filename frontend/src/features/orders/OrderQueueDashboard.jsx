@@ -18,7 +18,8 @@ import {
   MapPin,
   Receipt,
   QrCode,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 
 export const OrderQueueDashboard = ({ storeId }) => {
@@ -89,6 +90,31 @@ export const OrderQueueDashboard = ({ storeId }) => {
       fetchQueue(false);
     } catch (err) {
       alert(err.message || 'Failed to update order status');
+    }
+  };
+
+  const handleRemoveShortageItem = async (order, itemToRemove) => {
+    if (order.items.length <= 1) {
+      alert('Order must contain at least one item. If all items are out of stock, please cancel the order.');
+      return;
+    }
+
+    if (window.confirm(`Mark "${itemToRemove.nameSnapshot}" as OUT OF STOCK and remove from order?`)) {
+      try {
+        const updatedItems = order.items
+          .filter((i) => i.productId !== itemToRemove.productId)
+          .map((i) => ({ productId: i.productId, quantity: i.quantity }));
+
+        await orderService.modifyOrderItems(
+          storeId,
+          order._id,
+          updatedItems,
+          `${itemToRemove.nameSnapshot} Out of Stock`
+        );
+        fetchQueue(false);
+      } catch (err) {
+        alert(err.message || 'Failed to modify order items');
+      }
     }
   };
 
@@ -190,6 +216,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
         <div className="space-y-2.5">
           {orders.map((order) => {
             const isPending = order.orderStatus === 'PENDING';
+            const isModifiable = ['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus);
 
             return (
               <div
@@ -203,15 +230,6 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     <span className="font-mono font-black text-xs sm:text-sm text-gray-900">{order.orderNumber}</span>
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-800">
                       {order.orderType}
-                    </span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
-                        order.paymentStatus === 'PAID'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {order.paymentStatus}
                     </span>
                   </div>
 
@@ -252,22 +270,38 @@ export const OrderQueueDashboard = ({ storeId }) => {
                   )}
                 </div>
 
-                {/* Item List */}
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-1 text-xs space-y-1">
+                {/* Item List with Out-Of-Stock Shortage Removal Control */}
+                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-1 text-xs space-y-1.5">
                   {order.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-gray-700">
+                    <div key={idx} className="flex items-center justify-between text-gray-700">
                       <span>
                         {item.quantity}x {item.nameSnapshot} ({item.unitSnapshot})
                       </span>
-                      <span className="font-bold">₹{item.lineGrandTotal}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">₹{item.lineGrandTotal}</span>
+                        {isModifiable && (
+                          <button
+                            onClick={() => handleRemoveShortageItem(order, item)}
+                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                            title="Mark item as Out of Stock (Shortage)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
+                  {order.notes && (
+                    <p className="text-[11px] text-amber-800 bg-amber-50 p-1.5 rounded-md mt-1 font-medium">
+                      Note: "{order.notes}"
+                    </p>
+                  )}
                 </div>
 
                 {/* Action Buttons Bar */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
                   <div>
-                    <span className="text-[10px] text-gray-400 block font-medium">Total</span>
+                    <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
                     <span className="text-sm font-black text-green-700">₹{order.grandTotal}</span>
                   </div>
 
@@ -275,7 +309,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     {order.orderStatus === 'PENDING' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'ACCEPTED')}
-                        className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 shadow-2xs active:scale-95 transition"
+                        className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         Accept
@@ -285,7 +319,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     {order.orderStatus === 'ACCEPTED' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'PACKING')}
-                        className="px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 shadow-2xs active:scale-95 transition"
+                        className="px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
                       >
                         <PackageCheck className="w-3.5 h-3.5" />
                         Pack
@@ -295,7 +329,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     {order.orderStatus === 'PACKING' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'READY')}
-                        className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 shadow-2xs active:scale-95 transition"
+                        className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
                         Ready
@@ -305,7 +339,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     {order.orderStatus === 'READY' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'COMPLETED')}
-                        className="px-3 py-1.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 shadow-2xs active:scale-95 transition"
+                        className="px-3 py-1.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         Complete
@@ -315,7 +349,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     <button
                       onClick={() => handleSendWhatsAppUpdate(order._id)}
                       className="p-1.5 bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-300 rounded-xl text-xs font-bold transition"
-                      title="Send WhatsApp Update"
+                      title="Send WhatsApp Update to Customer"
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
                     </button>
