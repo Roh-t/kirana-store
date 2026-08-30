@@ -4,6 +4,7 @@ import { billingService } from '../../services/billingService';
 import { whatsappService } from '../../services/whatsappService';
 import { InvoiceReceiptModal } from '../billing/InvoiceReceiptModal';
 import { PaymentModal } from '../payments/PaymentModal';
+import { OrderPdfModal } from '../../components/common/OrderPdfModal';
 import {
   ShoppingBag,
   BellRing,
@@ -19,7 +20,8 @@ import {
   Receipt,
   QrCode,
   MessageSquare,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react';
 
 export const OrderQueueDashboard = ({ storeId }) => {
@@ -30,6 +32,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
+  const [pdfOrder, setPdfOrder] = useState(null);
 
   const prevPendingCount = useRef(0);
 
@@ -139,7 +142,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs space-y-3.5">
-      {/* Mobile Queue Header */}
+      {/* Queue Header */}
       <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-green-100 text-green-700 rounded-xl flex items-center justify-center font-bold">
@@ -171,7 +174,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
         </div>
       </div>
 
-      {/* Filter Tabs Horizontal Scroll */}
+      {/* Filter Tabs */}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {[
           { key: 'ALL', label: 'All', count: Object.values(statusSummary).reduce((a, b) => a + b, 0) },
@@ -204,7 +207,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
         ))}
       </div>
 
-      {/* Mobile Order Cards */}
+      {/* Order Cards */}
       {loading ? (
         <div className="py-8 text-center text-xs text-gray-400 font-bold">Syncing live queue...</div>
       ) : orders.length === 0 ? (
@@ -270,7 +273,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                   )}
                 </div>
 
-                {/* Item List with Out-Of-Stock Shortage Removal Control */}
+                {/* Item List */}
                 <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-1 text-xs space-y-1.5">
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-gray-700">
@@ -283,7 +286,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                           <button
                             onClick={() => handleRemoveShortageItem(order, item)}
                             className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                            title="Mark item as Out of Stock (Shortage)"
+                            title="Mark item as Out of Stock"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -291,14 +294,9 @@ export const OrderQueueDashboard = ({ storeId }) => {
                       </div>
                     </div>
                   ))}
-                  {order.notes && (
-                    <p className="text-[11px] text-amber-800 bg-amber-50 p-1.5 rounded-md mt-1 font-medium">
-                      Note: "{order.notes}"
-                    </p>
-                  )}
                 </div>
 
-                {/* Action Buttons Bar */}
+                {/* Action Buttons */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
                   <div>
                     <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
@@ -347,9 +345,17 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     )}
 
                     <button
+                      onClick={() => setPdfOrder(order)}
+                      className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
+                      title="PDF Order Slip"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-gray-700" />
+                    </button>
+
+                    <button
                       onClick={() => handleSendWhatsAppUpdate(order._id)}
                       className="p-1.5 bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-300 rounded-xl text-xs font-bold transition"
-                      title="Send WhatsApp Update to Customer"
+                      title="Send WhatsApp Update"
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
                     </button>
@@ -404,6 +410,16 @@ export const OrderQueueDashboard = ({ storeId }) => {
           order={paymentOrder}
           onClose={() => setPaymentOrder(null)}
           onSuccess={() => fetchQueue(false)}
+        />
+      )}
+
+      {/* Shared Order PDF Slip Modal */}
+      {pdfOrder && (
+        <OrderPdfModal
+          order={pdfOrder}
+          store={pdfOrder.storeId}
+          isOpen={!!pdfOrder}
+          onClose={() => setPdfOrder(null)}
         />
       )}
     </div>
