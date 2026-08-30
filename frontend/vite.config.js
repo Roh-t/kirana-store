@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react(),
-    tailwindcss(),
+        tailwindcss(),
   ],
-  base: './', // <--- Fixes asset loading on Render
+  base: '/', // <--- Absolute root path for nested React Router paths like /s/:slug
   server: {
     port: 5173,
     proxy: {
