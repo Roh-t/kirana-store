@@ -25,6 +25,7 @@ import subscriptionRouter from './modules/subscriptions/subscription.route.js';
 import auditRouter from './modules/auditLogs/audit.route.js';
 import whatsappRouter from './modules/whatsapp/whatsapp.route.js';
 import aiRouter from './modules/ai/aiOrder.route.js';
+import razorpayRouter from './modules/payments/razorpay.route.js';
 import publicRouter from './modules/public/public.route.js';
 
 const app = express();
@@ -42,6 +43,7 @@ app.use(
   })
 );
 
+// Express JSON Body Parsers (MUST BE BEFORE ROUTES)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -68,6 +70,7 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
 app.use('/api/v1/audit-logs', auditRouter);
 app.use('/api/v1/whatsapp', whatsappRouter);
+app.use('/api/v1/payments/razorpay', razorpayRouter);
 
 app.use((req, res, next) => {
   next(ApiError.notFound(`Endpoint does not exist: ${req.originalUrl}`));
