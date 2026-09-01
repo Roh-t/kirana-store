@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const userStoreRoleSchema = new mongoose.Schema(
   {
-    storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
+    storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', default: null },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
     assignedAt: { type: Date, default: Date.now }
   },
