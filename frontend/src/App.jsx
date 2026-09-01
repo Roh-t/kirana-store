@@ -32,13 +32,14 @@ import {
 } from 'lucide-react';
 
 function DashboardView() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [stores, setStores] = useState([]);
   const [activeStore, setActiveStore] = useState(null);
   const [activeTab, setActiveTab] = useState('STORE');
   const [storeModuleTab, setStoreModuleTab] = useState('QUEUE');
   const [isCreatingNewBranch, setIsCreatingNewBranch] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isSuperAdmin = user?.roles?.some((role) => (role.roleId?.name || role.roleId) === 'SUPER_ADMIN');
 
   const fetchStores = async () => {
     try {
@@ -92,18 +93,20 @@ function DashboardView() {
             Store
           </button>
 
-          <button
-            onClick={() => {
-              setIsCreatingNewBranch(false);
-              setActiveTab('SUPER_ADMIN');
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-              activeTab === 'SUPER_ADMIN' ? 'bg-purple-700 text-white shadow-2xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            SuperAdmin
-          </button>
+          {isSuperAdmin && (
+            <button
+              onClick={() => {
+                setIsCreatingNewBranch(false);
+                setActiveTab('SUPER_ADMIN');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                activeTab === 'SUPER_ADMIN' ? 'bg-purple-700 text-white shadow-2xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              SuperAdmin
+            </button>
+          )}
 
           <button
             onClick={logout}
@@ -115,7 +118,7 @@ function DashboardView() {
         </div>
       </div>
 
-      {activeTab === 'SUPER_ADMIN' ? (
+      {activeTab === 'SUPER_ADMIN' && isSuperAdmin ? (
         <SuperAdminDashboard />
       ) : isCreatingNewBranch || !activeStore ? (
         <CreateStoreModal

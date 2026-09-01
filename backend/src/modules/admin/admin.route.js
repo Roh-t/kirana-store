@@ -5,9 +5,9 @@ import { authorize } from '../../middlewares/authorize.js';
 
 const router = Router();
 
-// Protected by SuperAdmin Authorization Guard
+// Platform administration is restricted to Super Admins.
 router.use(authenticate);
-router.use(authorize('SUPER_ADMIN', 'STORE_OWNER')); // Owners & Admins can access overview metrics
+router.use(authorize('SUPER_ADMIN'));
 
 router.get('/metrics', AdminController.getMetrics);
 router.get('/stores', AdminController.getStores);
