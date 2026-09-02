@@ -462,6 +462,8 @@ export const OrderQueueDashboard = ({ storeId }) => {
               </div>
             );
           })}
+        </div>
+      )}
 
       {/* Thermal Receipt Modal */}
       <InvoiceReceiptModal invoiceData={invoiceData} onClose={() => setInvoiceData(null)} />
