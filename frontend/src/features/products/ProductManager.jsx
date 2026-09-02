@@ -3,7 +3,7 @@ import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import { Package, Plus, Search, Edit2, Trash2, Check, X, Barcode } from 'lucide-react';
 
-export const ProductManager = ({ storeId }) => {
+export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export const ProductManager = ({ storeId }) => {
     if (storeId) {
       fetchData();
     }
-  }, [storeId, search, selectedCategory]);
+  }, [storeId, search, selectedCategory, catalogVersion]);
 
   const handleSave = async (e) => {
     e.preventDefault();

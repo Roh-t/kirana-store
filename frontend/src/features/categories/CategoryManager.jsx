@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { categoryService } from '../../services/categoryService';
 import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X } from 'lucide-react';
 
-export const CategoryManager = ({ storeId }) => {
+export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -41,7 +41,8 @@ export const CategoryManager = ({ storeId }) => {
       setShowModal(false);
       setFormData({ name: '', description: '', sortOrder: 0 });
       setEditingId(null);
-      fetchCategories();
+      await fetchCategories();
+      onCategoryChanged?.();
     } catch (err) {
       setError(err.message || 'Failed to save category');
     }
@@ -50,7 +51,8 @@ export const CategoryManager = ({ storeId }) => {
   const handleToggleActive = async (cat) => {
     try {
       await categoryService.updateCategory(storeId, cat._id, { isActive: !cat.isActive });
-      fetchCategories();
+      await fetchCategories();
+      onCategoryChanged?.();
     } catch (err) {
       console.error('Failed to toggle status', err);
     }
@@ -60,7 +62,8 @@ export const CategoryManager = ({ storeId }) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
         await categoryService.deleteCategory(storeId, catId);
-        fetchCategories();
+        await fetchCategories();
+        onCategoryChanged?.();
       } catch (err) {
         console.error('Failed to delete category', err);
       }

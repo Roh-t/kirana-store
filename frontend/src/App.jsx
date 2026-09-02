@@ -39,6 +39,7 @@ function DashboardView() {
   const [activeTab, setActiveTab] = useState('STORE');
   const [storeModuleTab, setStoreModuleTab] = useState('HOME');
   const [isCreatingNewBranch, setIsCreatingNewBranch] = useState(false);
+  const [catalogVersion, setCatalogVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const isSuperAdmin = user?.roles?.some((role) => (role.roleId?.name || role.roleId) === 'SUPER_ADMIN');
 
@@ -221,8 +222,11 @@ function DashboardView() {
 
           {storeModuleTab === 'CATALOG' && (
             <div className="space-y-6">
-              <CategoryManager storeId={activeStore._id} />
-              <ProductManager storeId={activeStore._id} />
+              <CategoryManager
+                storeId={activeStore._id}
+                onCategoryChanged={() => setCatalogVersion((v) => v + 1)}
+              />
+              <ProductManager storeId={activeStore._id} catalogVersion={catalogVersion} />
             </div>
           )}
 
