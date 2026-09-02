@@ -40,9 +40,6 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
             </div>
           </div>
 
-          <div className="hidden sm:flex">
-            <NotificationFeed storeId={store?._id} />
-          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
