@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { subscriptionService } from '../../services/subscriptionService';
 import { razorpayService, loadRazorpayScript } from '../../services/razorpayService';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Users, Zap, Check, ShieldCheck, Crown } from 'lucide-react';
+import { Package, Users, Zap, Check, ShieldCheck, Crown, ArrowUpRight } from 'lucide-react';
 
 export const SubscriptionBanner = ({ storeId }) => {
   const { user } = useAuth();
@@ -104,31 +104,75 @@ export const SubscriptionBanner = ({ storeId }) => {
 
   return (
     <>
-      {/* SaaS Plan Banner */}
-      <div className="w-full bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-2xs mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-200 text-xs font-black rounded-xl uppercase tracking-wide">
-            {sub.status === 'TRIAL' ? '14-Day Free Trial' : `${sub.plan} PLAN`}
-          </span>
+      <div className="w-full rounded-[24px] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-green-50 p-2.5 shadow-[0_12px_30px_rgba(16,185,129,0.08)] mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="rounded-[20px] bg-gradient-to-br from-emerald-100 to-emerald-50 border border-emerald-200 px-3 py-3 flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-2xl bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-sm">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700">14-Day</div>
+              <div className="text-lg font-black text-gray-900 leading-none">Free Trial</div>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-3 text-xs text-gray-600 font-bold">
-            <span className="flex items-center gap-1">
-              <Package className="w-3.5 h-3.5 text-green-600" />
-              Products: {usage.products.current}/{usage.products.max === -1 ? '∞' : usage.products.max}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-green-600" />
-              Staff: {usage.staff.current}/{usage.staff.max === -1 ? '∞' : usage.staff.max}
-            </span>
+          <div className="rounded-[20px] bg-white border border-emerald-100 px-3 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200">
+                <Package className="w-5 h-5" />
+              </div>
+              <div className="text-sm font-black text-gray-900">Products</div>
+            </div>
+            <div className="flex items-center justify-between text-sm font-black text-emerald-700">
+              <span>{usage.products.current}</span>
+              <span className="text-gray-400">/</span>
+              <span>{usage.products.max === -1 ? '∞' : usage.products.max}</span>
+            </div>
+            <div className="mt-2 h-1.5 w-full bg-emerald-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-600 rounded-full"
+                style={{ width: `${Math.min(100, (usage.products.current / Math.max(usage.products.max, 1)) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-[20px] bg-white border border-emerald-100 px-3 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="text-sm font-black text-gray-900">Staff</div>
+            </div>
+            <div className="flex items-center justify-between text-sm font-black text-emerald-700">
+              <span>{usage.staff.current}</span>
+              <span className="text-gray-400">/</span>
+              <span>{usage.staff.max === -1 ? '∞' : usage.staff.max}</span>
+            </div>
+            <div className="mt-2 h-1.5 w-full bg-emerald-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-600 rounded-full"
+                style={{ width: `${Math.min(100, (usage.staff.current / Math.max(usage.staff.max, 1)) * 100)}%` }}
+              />
+            </div>
           </div>
         </div>
 
         <button
           onClick={() => setShowPlanModal(true)}
-          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 transition shadow-2xs active:scale-95 shrink-0"
+          className="mt-2.5 w-full flex items-center justify-between rounded-[20px] bg-gradient-to-r from-orange-400 via-amber-500 to-orange-500 px-4 py-3 shadow-[0_10px_25px_rgba(251,146,60,0.25)] text-white font-black text-left"
         >
-          <Zap className="w-3.5 h-3.5 fill-white" />
-          {sub.plan === 'FREE' ? 'Upgrade Plan' : 'Manage Subscription'}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center">
+              <Zap className="w-4 h-4 fill-white" />
+            </div>
+            <div>
+              <div className="text-lg">Upgrade Plan</div>
+              <div className="text-xs font-medium text-orange-50">Unlock more features and grow your business</div>
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center">
+            <ArrowUpRight className="w-5 h-5" />
+          </div>
         </button>
       </div>
 

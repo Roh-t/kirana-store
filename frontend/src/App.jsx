@@ -29,7 +29,8 @@ import {
   Warehouse,
   Users,
   TrendingUp,
-  Settings
+  Settings,
+  ArrowUpRight
 } from 'lucide-react';
 
 function DashboardView() {
@@ -74,11 +75,9 @@ function DashboardView() {
   return (
     <div className="w-full max-w-4xl flex flex-col items-center pb-20 sm:pb-6">
       {/* Top Navbar */}
-      <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2.5 mb-4 shadow-2xs">
+      <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-[22px] p-2.5 mb-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-black text-green-700 tracking-tight pl-1">KiranaFlow</h1>
-          <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-          <span className="hidden sm:inline-block text-[11px] font-bold text-gray-400">Store Engine</span>
+          <h1 className="text-[2rem] sm:text-[2.2rem] font-black leading-none tracking-[-0.06em] text-green-700">KiranaFlow</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -87,12 +86,24 @@ function DashboardView() {
               setIsCreatingNewBranch(false);
               setActiveTab('STORE');
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-              activeTab === 'STORE' ? 'bg-green-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition ${
+              activeTab === 'STORE' ? 'bg-green-600 text-white shadow-sm' : 'bg-green-50 text-green-700 border border-green-200'
             }`}
           >
-            <StoreIcon className="w-3.5 h-3.5" />
+            <StoreIcon className="w-4 h-4" />
             Store
+          </button>
+
+          <button
+            onClick={() => {
+              setIsCreatingNewBranch(false);
+              setActiveTab('STORE');
+            }}
+            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            title="Open store workspace"
+            aria-label="Open store workspace"
+          >
+            <ArrowUpRight className="w-4 h-4" />
           </button>
 
           {isSuperAdmin && (

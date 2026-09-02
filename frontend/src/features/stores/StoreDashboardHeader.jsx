@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StoreSwitcherDropdown } from './StoreSwitcherDropdown';
-import { NotificationFeed } from '../notifications/NotificationFeed';
-import { Copy, ExternalLink, Check, MapPin, Store as StoreIcon, Radio } from 'lucide-react';
+import { Copy, ExternalLink, Check, MapPin, Radio } from 'lucide-react';
 
 export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOpenCreateStore }) => {
   const [copied, setCopied] = useState(false);
