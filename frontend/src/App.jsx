@@ -75,9 +75,9 @@ function DashboardView() {
   return (
     <div className="w-full max-w-4xl flex flex-col items-center pb-20 sm:pb-6">
       {/* Top Navbar */}
-      <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-[22px] p-2.5 mb-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+      <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-[20px] p-2 mb-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2">
-          <h1 className="text-[2rem] sm:text-[2.2rem] font-black leading-none tracking-[-0.06em] text-green-700">KiranaFlow</h1>
+          <h1 className="text-[1.55rem] sm:text-[1.9rem] font-black leading-none tracking-[-0.06em] text-green-700">KiranaFlow</h1>
         </div>
 
         <div className="flex items-center gap-2">
