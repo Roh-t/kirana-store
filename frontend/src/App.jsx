@@ -23,6 +23,7 @@ import {
   LogOut,
   ShieldCheck,
   Store as StoreIcon,
+  Home,
   ShoppingBag,
   Package,
   Warehouse,
@@ -36,7 +37,7 @@ function DashboardView() {
   const [stores, setStores] = useState([]);
   const [activeStore, setActiveStore] = useState(null);
   const [activeTab, setActiveTab] = useState('STORE');
-  const [storeModuleTab, setStoreModuleTab] = useState('QUEUE');
+  const [storeModuleTab, setStoreModuleTab] = useState('HOME');
   const [isCreatingNewBranch, setIsCreatingNewBranch] = useState(false);
   const [loading, setLoading] = useState(true);
   const isSuperAdmin = user?.roles?.some((role) => (role.roleId?.name || role.roleId) === 'SUPER_ADMIN');
@@ -130,17 +131,18 @@ function DashboardView() {
         />
       ) : (
         <div className="w-full space-y-4">
-          <StoreDashboardHeader
-            store={activeStore}
-            stores={stores}
-            onStoreSwitched={(switchedStore) => setActiveStore(switchedStore)}
-            onOpenCreateStore={() => setIsCreatingNewBranch(true)}
-          />
-
-          <SubscriptionBanner storeId={activeStore._id} />
-
           {/* Segmented Navigation Tabs */}
           <div className="hidden sm:flex gap-1.5 overflow-x-auto no-scrollbar bg-white p-2 rounded-2xl border border-gray-200 shadow-2xs">
+            <button
+              onClick={() => setStoreModuleTab('HOME')}
+              className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                storeModuleTab === 'HOME' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </button>
+
             <button
               onClick={() => setStoreModuleTab('QUEUE')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
@@ -203,6 +205,18 @@ function DashboardView() {
           </div>
 
           {/* Module Views */}
+          {storeModuleTab === 'HOME' && (
+            <div className="space-y-4">
+              <StoreDashboardHeader
+                store={activeStore}
+                stores={stores}
+                onStoreSwitched={(switchedStore) => setActiveStore(switchedStore)}
+                onOpenCreateStore={() => setIsCreatingNewBranch(true)}
+              />
+              <SubscriptionBanner storeId={activeStore._id} />
+            </div>
+          )}
+
           {storeModuleTab === 'QUEUE' && <OrderQueueDashboard storeId={activeStore._id} />}
 
           {storeModuleTab === 'CATALOG' && (
@@ -227,6 +241,16 @@ function DashboardView() {
 
           {/* Fixed Mobile Bottom Bar */}
           <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1.5 z-40 flex items-center justify-around shadow-xl">
+            <button
+              onClick={() => setStoreModuleTab('HOME')}
+              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
+                storeModuleTab === 'HOME' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              }`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="text-[10px] mt-0.5">Home</span>
+            </button>
+
             <button
               onClick={() => setStoreModuleTab('QUEUE')}
               className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
