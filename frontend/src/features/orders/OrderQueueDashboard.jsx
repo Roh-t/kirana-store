@@ -32,6 +32,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const prevPendingCount = useRef(0);
 
@@ -227,185 +228,240 @@ export const OrderQueueDashboard = ({ storeId }) => {
           {orders.map((order) => {
             const isPending = order.orderStatus === 'PENDING';
             const isModifiable = ['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus);
+            const isExpanded = expandedOrderId === order._id;
 
             return (
               <div
                 key={order._id}
-                className={`p-3.5 rounded-2xl border transition ${
+                className={`overflow-hidden rounded-2xl border transition ${
                   isPending ? 'bg-amber-50/70 border-amber-300 shadow-2xs' : 'bg-white border-gray-200/90'
                 }`}
               >
-                <div className="flex items-center justify-between gap-1.5 border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-black text-xs sm:text-sm text-gray-900">{order.orderNumber}</span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-800">
-                      {order.orderType}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => setExpandedOrderId(isExpanded ? null : order._id)}
+                  className="w-full text-left p-3.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-black text-xs sm:text-sm text-gray-900 truncate">{order.orderNumber}</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-800 whitespace-nowrap">
+                        {order.orderType}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                          order.orderStatus === 'PENDING'
+                            ? 'bg-red-500 text-white animate-pulse'
+                            : order.orderStatus === 'ACCEPTED'
+                            ? 'bg-blue-100 text-blue-800'
+                            : order.orderStatus === 'PACKING'
+                            ? 'bg-purple-100 text-purple-800'
+                            : order.orderStatus === 'READY'
+                            ? 'bg-amber-100 text-amber-800'
+                            : order.orderStatus === 'COMPLETED'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {order.orderStatus}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-500">{isExpanded ? 'Hide' : 'View'}</span>
+                    </div>
                   </div>
 
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                      order.orderStatus === 'PENDING'
-                        ? 'bg-red-500 text-white animate-pulse'
-                        : order.orderStatus === 'ACCEPTED'
-                        ? 'bg-blue-100 text-blue-800'
-                        : order.orderStatus === 'PACKING'
-                        ? 'bg-purple-100 text-purple-800'
-                        : order.orderStatus === 'READY'
-                        ? 'bg-amber-100 text-amber-800'
-                        : order.orderStatus === 'COMPLETED'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {order.orderStatus}
-                  </span>
-                </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-700">
+                    <div className="flex min-w-0 items-center gap-1.5 text-gray-900">
+                      <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="truncate font-semibold">{order.customerDetails.name}</span>
+                    </div>
+                    <div className="text-sm font-black text-green-700 whitespace-nowrap">₹{order.grandTotal}</div>
+                  </div>
 
-                {/* Customer Details */}
-                <div className="py-2 text-xs text-gray-700 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="font-bold flex items-center gap-1 text-gray-900">
-                    <User className="w-3.5 h-3.5 text-gray-400" />
-                    {order.customerDetails.name}
-                  </span>
-                  <span className="font-mono text-gray-500 flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    {order.customerDetails.phone}
-                  </span>
-                  {order.customerDetails.deliveryAddress && (
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      {order.customerDetails.deliveryAddress}
-                    </span>
-                  )}
-                </div>
-
-                {/* Item List */}
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-1 text-xs space-y-1.5">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-gray-700">
-                      <span>
-                        {item.quantity}x {item.nameSnapshot} ({item.unitSnapshot})
+                  {!isExpanded && (
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                      <span className="truncate">
+                        {order.items.slice(0, 2).map((item) => `${item.quantity}x ${item.nameSnapshot}`).join(' • ')}
+                        {order.items.length > 2 ? ' • +' + (order.items.length - 2) + ' more' : ''}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">₹{item.lineGrandTotal}</span>
-                        {isModifiable && (
+                      <span>{order.items.length} items</span>
+                    </div>
+                  )}
+                </button>
+
+                {isExpanded && (
+                  <div className="border-t border-gray-100 px-3.5 pb-3.5 pt-3">
+                    <div className="text-xs text-gray-700 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="font-bold flex items-center gap-1 text-gray-900">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                        {order.customerDetails.name}
+                      </span>
+                      <span className="font-mono text-gray-500 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                        {order.customerDetails.phone}
+                      </span>
+                      {order.customerDetails.deliveryAddress && (
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                          {order.customerDetails.deliveryAddress}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-2 text-xs space-y-1.5">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-gray-700">
+                          <span>
+                            {item.quantity}x {item.nameSnapshot} ({item.unitSnapshot})
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">₹{item.lineGrandTotal}</span>
+                            {isModifiable && (
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleRemoveShortageItem(order, item);
+                                }}
+                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                title="Mark item as Out of Stock"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+                      <div>
+                        <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
+                        <span className="text-sm font-black text-green-700">₹{order.grandTotal}</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1">
+                        {order.orderStatus === 'PENDING' && (
                           <button
-                            onClick={() => handleRemoveShortageItem(order, item)}
-                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                            title="Mark item as Out of Stock"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleStatusUpdate(order._id, 'ACCEPTED');
+                            }}
+                            className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Accept
+                          </button>
+                        )}
+
+                        {order.orderStatus === 'ACCEPTED' && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleStatusUpdate(order._id, 'PACKING');
+                            }}
+                            className="px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
+                          >
+                            <PackageCheck className="w-3.5 h-3.5" />
+                            Pack
+                          </button>
+                        )}
+
+                        {order.orderStatus === 'PACKING' && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleStatusUpdate(order._id, 'READY');
+                            }}
+                            className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Ready
+                          </button>
+                        )}
+
+                        {order.orderStatus === 'READY' && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleStatusUpdate(order._id, 'COMPLETED');
+                            }}
+                            className="px-3 py-1.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Complete
+                          </button>
+                        )}
+
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDirectPdfDownload(order);
+                          }}
+                          className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
+                          title="Direct PDF Download"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-gray-700" />
+                        </button>
+
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSendWhatsAppUpdate(order._id);
+                          }}
+                          className="p-1.5 bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-300 rounded-xl text-xs font-bold transition"
+                          title="Send WhatsApp Update"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                        </button>
+
+                        {order.paymentStatus !== 'PAID' && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setPaymentOrder(order);
+                            }}
+                            className="px-2.5 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            UPI
+                          </button>
+                        )}
+
+                        {['READY', 'COMPLETED'].includes(order.orderStatus) && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleGenerateBill(order._id);
+                            }}
+                            className="p-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold transition"
+                            title="Print Bill"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus) && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              const reason = prompt('Cancellation reason:');
+                              if (reason !== null) handleStatusUpdate(order._id, 'CANCELLED');
+                            }}
+                            className="p-1.5 text-red-500 active:bg-red-50 rounded-lg border border-red-200 transition"
+                            title="Cancel Order"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Action Buttons Bar */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
-                  <div>
-                    <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
-                    <span className="text-sm font-black text-green-700">₹{order.grandTotal}</span>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-1">
-                    {order.orderStatus === 'PENDING' && (
-                      <button
-                        onClick={() => handleStatusUpdate(order._id, 'ACCEPTED')}
-                        className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Accept
-                      </button>
-                    )}
-
-                    {order.orderStatus === 'ACCEPTED' && (
-                      <button
-                        onClick={() => handleStatusUpdate(order._id, 'PACKING')}
-                        className="px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                      >
-                        <PackageCheck className="w-3.5 h-3.5" />
-                        Pack
-                      </button>
-                    )}
-
-                    {order.orderStatus === 'PACKING' && (
-                      <button
-                        onClick={() => handleStatusUpdate(order._id, 'READY')}
-                        className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
-                      >
-                        <CheckCheck className="w-3.5 h-3.5" />
-                        Ready
-                      </button>
-                    )}
-
-                    {order.orderStatus === 'READY' && (
-                      <button
-                        onClick={() => handleStatusUpdate(order._id, 'COMPLETED')}
-                        className="px-3 py-1.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Complete
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleDirectPdfDownload(order)}
-                      className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
-                      title="Direct PDF Download"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-gray-700" />
-                    </button>
-
-                    <button
-                      onClick={() => handleSendWhatsAppUpdate(order._id)}
-                      className="p-1.5 bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-300 rounded-xl text-xs font-bold transition"
-                      title="Send WhatsApp Update"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                    </button>
-
-                    {order.paymentStatus !== 'PAID' && (
-                      <button
-                        onClick={() => setPaymentOrder(order)}
-                        className="px-2.5 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                      >
-                        <QrCode className="w-3.5 h-3.5" />
-                        UPI
-                      </button>
-                    )}
-
-                    {['READY', 'COMPLETED'].includes(order.orderStatus) && (
-                      <button
-                        onClick={() => handleGenerateBill(order._id)}
-                        className="p-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold transition"
-                        title="Print Bill"
-                      >
-                        <Receipt className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus) && (
-                      <button
-                        onClick={() => {
-                          const reason = prompt('Cancellation reason:');
-                          if (reason !== null) handleStatusUpdate(order._id, 'CANCELLED');
-                        }}
-                        className="p-1.5 text-red-500 active:bg-red-50 rounded-lg border border-red-200 transition"
-                        title="Cancel Order"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
-        </div>
-      )}
 
       {/* Thermal Receipt Modal */}
       <InvoiceReceiptModal invoiceData={invoiceData} onClose={() => setInvoiceData(null)} />
