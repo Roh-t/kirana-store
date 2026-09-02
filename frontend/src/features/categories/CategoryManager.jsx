@@ -6,6 +6,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', sortOrder: 0 });
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState(null);
@@ -30,7 +31,10 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setError(null);
+    setIsSubmitting(true);
 
     try {
       if (editingId) {
@@ -45,6 +49,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       onCategoryChanged?.();
     } catch (err) {
       setError(err.message || 'Failed to save category');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -204,10 +210,20 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Check className="w-4 h-4" />
-                  Save
+                  {isSubmitting ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Save
+                    </>
+                  )}
                 </button>
               </div>
             </form>

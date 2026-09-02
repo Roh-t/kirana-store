@@ -7,6 +7,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -49,7 +50,10 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setError(null);
+    setIsSubmitting(true);
 
     const payload = {
       ...formData,
@@ -66,9 +70,11 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       }
       setShowModal(false);
       resetForm();
-      fetchData();
+      await fetchData();
     } catch (err) {
       setError(err.message || 'Failed to save product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -345,10 +351,20 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Check className="w-4 h-4" />
-                  Save Item
+                  {isSubmitting ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Save Item
+                    </>
+                  )}
                 </button>
               </div>
             </form>
