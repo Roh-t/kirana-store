@@ -46,26 +46,35 @@ export const AuditLogViewer = ({ storeId }) => {
         </div>
       ) : (
         <div className="divide-y divide-amber-100 border border-amber-200 rounded-2xl overflow-hidden">
-          {logs.map((log) => (
-            <div key={log._id} className="p-3 bg-white flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-md font-mono font-extrabold bg-violet-100 text-violet-800 text-[10px]">
-                  {log.action}
-                </span>
-                <span className="font-bold text-stone-900">{log.entityType}</span>
-              </div>
+          {logs.map((log) => {
+            const actorName = log.actorId?.name || 'System';
+            const actorPhone = log.actorId?.phone;
+            const actorEmail = log.actorId?.email;
+            const actorLabel = actorPhone || actorEmail
+              ? `${actorName} (${[actorPhone, actorEmail].filter(Boolean).join(' • ')})`
+              : actorName;
 
-              <div className="flex items-center gap-3 text-stone-500">
-                <span className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-stone-400" />
-                  {log.actorId?.name || 'System'}
-                </span>
-                <span className="text-[10px] font-mono">
-                  {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+            return (
+              <div key={log._id} className="p-3 bg-white flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md font-mono font-extrabold bg-violet-100 text-violet-800 text-[10px]">
+                    {log.action}
+                  </span>
+                  <span className="font-bold text-stone-900">{log.entityType}</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-stone-500">
+                  <span className="flex items-center gap-1 max-w-[260px] truncate" title={actorLabel}>
+                    <User className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <span className="truncate">{actorLabel}</span>
+                  </span>
+                  <span className="text-[10px] font-mono whitespace-nowrap">
+                    {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
