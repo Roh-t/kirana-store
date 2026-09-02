@@ -21,18 +21,64 @@ import {
   QrCode,
   MessageSquare,
   Trash2,
-  FileText
+  FileText,
+  CalendarRange
 } from 'lucide-react';
+
+const dateKey = (value) => {
+  const d = new Date(value);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const formatOrderDate = (value) => {
+  const d = new Date(value);
+  return d.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const formatOrderTime = (value) => {
+  const d = new Date(value);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 export const OrderQueueDashboard = ({ storeId }) => {
   const [orders, setOrders] = useState([]);
   const [statusSummary, setStatusSummary] = useState({});
   const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('ALL');
+  const [customDate, setCustomDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+
+  const filteredOrders = orders.filter((order) => {
+    if (!order?.createdAt) return true;
+
+    const orderDateKey = dateKey(order.createdAt);
+
+    if (selectedDateFilter === 'ALL') return true;
+    if (selectedDateFilter === 'TODAY') {
+      const todayKey = dateKey(new Date());
+      return orderDateKey === todayKey;
+    }
+    if (selectedDateFilter === 'YESTERDAY') {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return orderDateKey === dateKey(yesterday);
+    }
+    if (selectedDateFilter === 'THIS_WEEK') {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      return new Date(order.createdAt) >= startOfWeek;
+    }
+    if (selectedDateFilter === 'CUSTOM') {
+      return customDate && orderDateKey === customDate;
+    }
+
+    return true;
+  });
 
   const prevPendingCount = useRef(0);
 
@@ -223,18 +269,27 @@ export const OrderQueueDashboard = ({ storeId }) => {
           <Clock className="w-7 h-7 text-gray-300 mx-auto mb-1" />
           <p className="text-xs text-gray-500 font-bold">No orders in this state</p>
         </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="py-8 text-center bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-dashed border-emerald-200 p-4">
+          <Clock className="w-7 h-7 text-emerald-300 mx-auto mb-1" />
+          <p className="text-xs text-gray-600 font-bold">No orders found for this date filter</p>
+        </div>
       ) : (
         <div className="space-y-2.5">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const isPending = order.orderStatus === 'PENDING';
             const isModifiable = ['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus);
             const isExpanded = expandedOrderId === order._id;
+            const orderDate = formatOrderDate(order.createdAt);
+            const orderTime = formatOrderTime(order.createdAt);
 
             return (
               <div
                 key={order._id}
-                className={`overflow-hidden rounded-2xl border transition ${
-                  isPending ? 'bg-amber-50/70 border-amber-300 shadow-2xs' : 'bg-white border-gray-200/90'
+                className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
+                  isPending
+                    ? 'bg-gradient-to-br from-amber-50 via-white to-amber-50 border-amber-300 shadow-[0_4px_14px_rgba(245,158,11,0.08)]'
+                    : 'bg-gradient-to-br from-white via-white to-emerald-50/30 border-gray-200/90 shadow-[0_4px_14px_rgba(15,23,42,0.03)]'
                 }`}
               >
                 <button
@@ -245,7 +300,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-mono font-black text-xs sm:text-sm text-gray-900 truncate">{order.orderNumber}</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-800 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
                         {order.orderType}
                       </span>
                     </div>
@@ -258,11 +313,11 @@ export const OrderQueueDashboard = ({ storeId }) => {
                             : order.orderStatus === 'ACCEPTED'
                             ? 'bg-blue-100 text-blue-800'
                             : order.orderStatus === 'PACKING'
-                            ? 'bg-purple-100 text-purple-800'
+                            ? 'bg-violet-100 text-violet-800'
                             : order.orderStatus === 'READY'
                             ? 'bg-amber-100 text-amber-800'
                             : order.orderStatus === 'COMPLETED'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-gray-100 text-gray-600'
                         }`}
                       >
@@ -272,23 +327,28 @@ export const OrderQueueDashboard = ({ storeId }) => {
                     </div>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-700">
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-gray-500">
                     <div className="flex min-w-0 items-center gap-1.5 text-gray-900">
                       <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="truncate font-semibold">{order.customerDetails.name}</span>
                     </div>
-                    <div className="text-sm font-black text-green-700 whitespace-nowrap">₹{order.grandTotal}</div>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <span>{orderDate}</span>
+                      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold text-gray-600">{orderTime}</span>
+                    </div>
                   </div>
 
-                  {!isExpanded && (
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-                      <span className="truncate">
-                        {order.items.slice(0, 2).map((item) => `${item.quantity}x ${item.nameSnapshot}`).join(' • ')}
-                        {order.items.length > 2 ? ' • +' + (order.items.length - 2) + ' more' : ''}
-                      </span>
-                      <span>{order.items.length} items</span>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs text-gray-700">
+                    <div className="min-w-0 text-gray-600">
+                      {!isExpanded && (
+                        <span className="truncate block">
+                          {order.items.slice(0, 2).map((item) => `${item.quantity}x ${item.nameSnapshot}`).join(' • ')}
+                          {order.items.length > 2 ? ' • +' + (order.items.length - 2) + ' more' : ''}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="text-sm font-black text-emerald-700 whitespace-nowrap">₹{order.grandTotal}</div>
+                  </div>
                 </button>
 
                 {isExpanded && (
