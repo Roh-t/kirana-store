@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import { orderService } from '../../services/orderService';
+import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { X, ShoppingBag, Plus, Minus, Trash2, MapPin, Phone, User, Check } from 'lucide-react';
 
 export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
@@ -24,6 +25,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
   const [submitting, setSubmitting] = useState(false);
   const [validationError, setValidationError] = useState(null);
   const [quantityDrafts, setQuantityDrafts] = useState({});
+  const [selectedUnits, setSelectedUnits] = useState({});
 
   if (!isOpen) return null;
 
@@ -122,6 +124,11 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
               {/* Item List */}
               <div className="divide-y divide-gray-100 border border-gray-200 rounded-2xl p-3 bg-white space-y-2">
                 {itemList.map(({ product, quantity, lineTotal }) => (
+                  (() => {
+                    const displayUnit = selectedUnits[product._id] || product.unit;
+                    const displayQuantity = convertFromBaseQuantity(quantity, displayUnit, product.unit);
+
+                    return (
                   <div key={product._id} className="pt-2 pb-2 flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-bold text-gray-900 truncate">{product.name}</h4>
@@ -131,7 +138,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                     <div className="flex items-center gap-2">
                       <div className="flex items-center bg-gray-100 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(product, -1)}
+                          onClick={() => updateQuantity(product, -convertToBaseQuantity(1, displayUnit, product.unit))}
                           className="p-1 text-gray-600 hover:bg-gray-200 rounded-l-lg"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -140,15 +147,15 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           type="number"
                           min="0.001"
                           step="0.001"
-                          value={quantityDrafts[product._id] ?? quantity}
-                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(quantity) }))}
+                          value={quantityDrafts[product._id] ?? displayQuantity}
+                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
                           onChange={(event) => {
                             if (/^\d*\.?\d*$/.test(event.target.value)) {
                               setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                             }
                           }}
                           onBlur={(event) => {
-                            setQuantity(product, event.target.value);
+                            setQuantity(product, convertToBaseQuantity(event.target.value, displayUnit, product.unit));
                             setQuantityDrafts((prev) => {
                               const next = { ...prev };
                               delete next[product._id];
@@ -158,9 +165,25 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           aria-label={`Quantity for ${product.name}`}
                           className="w-10 bg-transparent text-center text-xs font-bold outline-none appearance-none"
                         />
-                        <span className="pr-1.5 text-[10px] font-bold text-gray-500">{product.unit}</span>
+                        <select
+                          value={displayUnit}
+                          onChange={(event) => {
+                            const nextUnit = event.target.value;
+                            setSelectedUnits((prev) => ({ ...prev, [product._id]: nextUnit }));
+                            setQuantityDrafts((prev) => ({
+                              ...prev,
+                              [product._id]: String(convertFromBaseQuantity(quantity, nextUnit, product.unit))
+                            }));
+                          }}
+                          aria-label={`Unit for ${product.name}`}
+                          className="bg-transparent text-[10px] font-bold text-gray-500 outline-none"
+                        >
+                          {getQuantityUnitOptions(product.unit).map(({ unit }) => (
+                            <option key={unit} value={unit}>{unit}</option>
+                          ))}
+                        </select>
                         <button
-                          onClick={() => updateQuantity(product, 1)}
+                          onClick={() => updateQuantity(product, convertToBaseQuantity(1, displayUnit, product.unit))}
                           className="p-1 text-gray-600 hover:bg-gray-200 rounded-r-lg"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -177,6 +200,8 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                       </button>
                     </div>
                   </div>
+                    );
+                  })()
                 ))}
               </div>
 

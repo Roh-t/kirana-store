@@ -5,6 +5,7 @@ import { CartDrawer } from './CartDrawer';
 import { OrderSuccessView } from './OrderSuccessView';
 import { CustomerOrderHistoryModal } from './CustomerOrderHistoryModal';
 import { VoiceOrderAssistant } from '../ai/VoiceOrderAssistant';
+import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight } from 'lucide-react';
 
 export const PublicStorefront = ({ slug }) => {
@@ -17,6 +18,7 @@ export const PublicStorefront = ({ slug }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAiVoiceOpen, setIsAiVoiceOpen] = useState(false);
   const [quantityDrafts, setQuantityDrafts] = useState({});
+  const [selectedUnits, setSelectedUnits] = useState({});
   const [placedOrder, setPlacedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -169,6 +171,8 @@ export const PublicStorefront = ({ slug }) => {
           catalog.map((product) => {
             const qty = items[product._id]?.quantity || 0;
             const hasDiscount = product.mrp > product.sellingPrice;
+            const displayUnit = selectedUnits[product._id] || product.unit;
+            const displayQuantity = convertFromBaseQuantity(qty, displayUnit, product.unit);
 
             return (
               <div
@@ -207,7 +211,7 @@ export const PublicStorefront = ({ slug }) => {
                   ) : (
                     <div className="flex items-center bg-green-600 text-white rounded-xl shadow-2xs">
                       <button
-                        onClick={() => updateQuantity(product, -1)}
+                        onClick={() => updateQuantity(product, -convertToBaseQuantity(1, displayUnit, product.unit))}
                         className="p-2.5 active:bg-green-700 rounded-l-xl transition"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -216,15 +220,15 @@ export const PublicStorefront = ({ slug }) => {
                         type="number"
                         min="0.001"
                         step="0.001"
-                        value={quantityDrafts[product._id] ?? qty}
-                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(qty) }))}
+                        value={quantityDrafts[product._id] ?? displayQuantity}
+                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
                         onChange={(event) => {
                           if (/^\d*\.?\d*$/.test(event.target.value)) {
                             setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                           }
                         }}
                         onBlur={(event) => {
-                          setQuantity(product, event.target.value);
+                          setQuantity(product, convertToBaseQuantity(event.target.value, displayUnit, product.unit));
                           setQuantityDrafts((prev) => {
                             const next = { ...prev };
                             delete next[product._id];
@@ -235,9 +239,25 @@ export const PublicStorefront = ({ slug }) => {
                         aria-label={`Quantity for ${product.name}`}
                         className="w-10 bg-transparent text-center text-xs font-black outline-none appearance-none"
                       />
-                      <span className="pr-2 text-[10px] font-bold">{product.unit}</span>
+                      <select
+                        value={displayUnit}
+                        onChange={(event) => {
+                          const nextUnit = event.target.value;
+                          setSelectedUnits((prev) => ({ ...prev, [product._id]: nextUnit }));
+                          setQuantityDrafts((prev) => ({
+                            ...prev,
+                            [product._id]: String(convertFromBaseQuantity(qty, nextUnit, product.unit))
+                          }));
+                        }}
+                        aria-label={`Unit for ${product.name}`}
+                        className="bg-transparent text-[10px] font-bold outline-none"
+                      >
+                        {getQuantityUnitOptions(product.unit).map(({ unit }) => (
+                          <option key={unit} value={unit}>{unit}</option>
+                        ))}
+                      </select>
                       <button
-                        onClick={() => updateQuantity(product, 1)}
+                        onClick={() => updateQuantity(product, convertToBaseQuantity(1, displayUnit, product.unit))}
                         className="p-2.5 active:bg-green-700 rounded-r-xl transition"
                       >
                         <Plus className="w-3.5 h-3.5" />
