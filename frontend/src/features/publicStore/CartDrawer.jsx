@@ -176,10 +176,10 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             }));
                           }}
                           aria-label={`Unit for ${product.name}`}
-                          className="bg-transparent text-[10px] font-bold text-gray-500 outline-none"
+                          className="bg-white text-green-700 border border-green-200 rounded-md px-1 py-0.5 text-[10px] font-black outline-none cursor-pointer"
                         >
                           {getQuantityUnitOptions(product.unit).map(({ unit }) => (
-                            <option key={unit} value={unit}>{unit}</option>
+                            <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
                           ))}
                         </select>
                         <button
