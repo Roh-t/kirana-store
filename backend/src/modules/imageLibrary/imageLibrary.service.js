@@ -11,6 +11,10 @@ export class ImageLibraryService {
   }
 
   static async create(userId, data) {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      throw ApiError.serviceUnavailable('Cloudinary is not configured on the server');
+    }
+
     if (!data.imageData || typeof data.imageData !== 'string' || !data.imageData.startsWith('data:image/')) {
       throw ApiError.badRequest('A valid image file is required');
     }
@@ -21,10 +25,16 @@ export class ImageLibraryService {
       throw ApiError.badRequest('Image file is too large. Maximum size is 6 MB');
     }
 
-    const upload = await cloudinary.uploader.upload(data.imageData, {
-      folder: 'kiranaflow/image-library',
-      resource_type: 'image'
-    });
+    let upload;
+    try {
+      upload = await cloudinary.uploader.upload(data.imageData, {
+        folder: 'kiranaflow/image-library',
+        resource_type: 'image'
+      });
+    } catch (error) {
+      console.error('[Cloudinary] Image upload failed:', error.message);
+      throw ApiError.badGateway('Cloudinary rejected the image upload. Check the server Cloudinary credentials.');
+    }
     return ImageLibrary.create({
       label: data.label.trim(),
       aliases: Array.isArray(data.aliases) ? data.aliases.map((alias) => alias.trim()).filter(Boolean) : [],

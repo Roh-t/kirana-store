@@ -29,6 +29,14 @@ export class ApiError extends Error {
     return new ApiError(409, message, 'CONFLICT');
   }
 
+  static badGateway(message = 'Upstream service error') {
+    return new ApiError(502, message, 'BAD_GATEWAY');
+  }
+
+  static serviceUnavailable(message = 'Service unavailable') {
+    return new ApiError(503, message, 'SERVICE_UNAVAILABLE');
+  }
+
   static internal(message = 'Internal Server Error') {
     return new ApiError(500, message, 'INTERNAL_SERVER_ERROR');
   }

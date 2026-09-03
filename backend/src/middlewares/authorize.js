@@ -7,14 +7,17 @@ export const authorize = (...allowedRoles) => {
     }
 
     // Check if user has active role matching allowedRoles
-    const userRoleNames = req.user.roles.map((r) => r.roleId?.name || r.roleId);
+    const userRoleNames = req.user.roles.map((r) => {
+      const roleName = r.roleId?.name || r.roleId;
+      return typeof roleName === 'string' ? roleName.toUpperCase() : roleName;
+    });
     
     // SuperAdmin bypass
     if (userRoleNames.includes('SUPER_ADMIN')) {
       return next();
     }
 
-    const hasPermission = allowedRoles.some((role) => userRoleNames.includes(role));
+    const hasPermission = allowedRoles.some((role) => userRoleNames.includes(role.toUpperCase()));
 
     if (!hasPermission) {
       return next(ApiError.forbidden('You do not have permission to perform this action.'));
