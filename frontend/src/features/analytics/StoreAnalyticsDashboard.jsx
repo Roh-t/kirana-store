@@ -21,54 +21,55 @@ const currency = (value = 0) =>
   });
 
 /**
- * Converts modern colors (oklch, lab, color-mix) into standard sRGB
- * using the browser's native canvas context.
+ * Executes a function while intercepting getComputedStyle to convert
+ * all modern 'oklch(...)' colors into standard 'rgb(...)' colors
+ * so html2canvas can parse them without crashing.
  */
-const convertOklchColor = (val, ctx) => {
-  if (!val || typeof val !== 'string' || !val.includes('oklch')) return val;
-  return val.replace(/oklch\([^)]+\)/gi, (match) => {
-    try {
-      ctx.fillStyle = '#000000';
-      ctx.fillStyle = match;
-      return ctx.fillStyle;
-    } catch {
-      return match;
-    }
-  });
-};
-
-/**
- * Inlines computed styles to all cloned elements and cleans oklch colors.
- */
-const prepareClonedElement = (sourceEl, targetEl, clonedDoc) => {
+const runWithOklchPolyfill = async (callback) => {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Strip global stylesheets from the cloned document so html2canvas doesn't fail parsing them
-  clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => el.remove());
-
-  const sourceNodes = [sourceEl, ...sourceEl.querySelectorAll('*')];
-  const targetNodes = [targetEl, ...targetEl.querySelectorAll('*')];
-
-  sourceNodes.forEach((src, idx) => {
-    const dst = targetNodes[idx];
-    if (!dst) return;
-
-    const computed = window.getComputedStyle(src);
-    for (let i = 0; i < computed.length; i++) {
-      const prop = computed[i];
-      const val = computed.getPropertyValue(prop);
-      if (val) {
-        dst.style.setProperty(
-          prop,
-          convertOklchColor(val, ctx),
-          computed.getPropertyPriority(prop)
-        );
+  const toRgb = (val) => {
+    if (!val || typeof val !== 'string' || !val.includes('oklch')) return val;
+    return val.replace(/oklch\([^)]+\)/gi, (match) => {
+      try {
+        ctx.fillStyle = '#000000';
+        ctx.fillStyle = match;
+        return ctx.fillStyle;
+      } catch {
+        return '#000000';
       }
-    }
-  });
+    });
+  };
+
+  const originalGetComputedStyle = window.getComputedStyle;
+
+  window.getComputedStyle = function (elt, pseudoElt) {
+    const origStyle = originalGetComputedStyle.call(window, elt, pseudoElt);
+    return new Proxy(origStyle, {
+      get(target, prop) {
+        if (prop === 'getPropertyValue') {
+          return function (propertyName) {
+            const val = target.getPropertyValue(propertyName);
+            return toRgb(val);
+          };
+        }
+        const val = target[prop];
+        if (typeof val === 'function') {
+          return val.bind(target);
+        }
+        return toRgb(val);
+      }
+    });
+  };
+
+  try {
+    return await callback(toRgb);
+  } finally {
+    window.getComputedStyle = originalGetComputedStyle;
+  }
 };
 
 export const StoreAnalyticsDashboard = ({ storeId }) => {
@@ -115,15 +116,23 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
   const exportReport = async (format) => {
     if (!reportRef.current || exporting) return;
     setExporting(true);
+
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDoc, clonedElement) => {
-          prepareClonedElement(reportRef.current, clonedElement, clonedDoc);
-        }
+      const canvas = await runWithOklchPolyfill(async (toRgb) => {
+        return await html2canvas(reportRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          onclone: (clonedDoc) => {
+            // Also replace any oklch in embedded style tags
+            clonedDoc.querySelectorAll('style').forEach((styleTag) => {
+              if (styleTag.textContent && styleTag.textContent.includes('oklch')) {
+                styleTag.textContent = toRgb(styleTag.textContent);
+              }
+            });
+          }
+        });
       });
 
       if (format === 'image') {
