@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { analyticsService } from '../../services/analyticsService';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import {
   TrendingUp,
   Award,
@@ -20,100 +19,92 @@ const currency = (value = 0) =>
     minimumFractionDigits: 0
   });
 
-// Properties that can legitimately hold oklch()/color-mix()/lab() values in
-// modern browsers (e.g. Tailwind v4's default palette). html2canvas's CSS
-// parser only understands rgb()/rgba()/hsl()/hex, so anything resolved to
-// oklch() must be converted before html2canvas sees it.
-const COLOR_PROPERTIES = [
-  'color',
-  'background-color',
-  'border-color',
-  'border-top-color',
-  'border-right-color',
-  'border-bottom-color',
-  'border-left-color',
-  'outline-color',
-  'text-decoration-color',
-  'fill',
-  'stroke',
-  'box-shadow',
-  'background-image'
-];
+const drawOwnerReport = (metrics) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1400;
+  canvas.height = 1050;
+  const context = canvas.getContext('2d');
+  const kpis = metrics.kpis || {};
+  const topProducts = metrics.topProducts || [];
+  const trendOrders = metrics.trendOrders || [];
+  const paymentMix = metrics.paymentMix || [];
 
-// Resolves any unsupported CSS color function (oklch, lab, lch, color-mix,
-// etc.) to an rgb()/rgba() string the browser itself computes, by bouncing
-// the value through a throwaway element's `color` property.
-const resolveToRgb = (value) => {
-  if (!value || typeof value !== 'string') return value;
-  const hasModernColorFn = /(oklch|oklab|lab|lch|color-mix)\(/i.test(value);
-  if (!hasModernColorFn) return value;
+  context.fillStyle = '#f8fafc';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#0f172a';
+  context.font = 'bold 34px Arial';
+  context.fillText('KiranaFlow Owner Performance Dashboard', 50, 65);
+  context.fillStyle = '#64748b';
+  context.font = '18px Arial';
+  context.fillText(`Generated ${new Date().toLocaleString()}`, 50, 98);
 
-  const probe = document.createElement('span');
-  probe.style.display = 'none';
-  probe.style.color = value;
-  document.body.appendChild(probe);
-  const resolved = getComputedStyle(probe).color;
-  document.body.removeChild(probe);
-
-  // Fall back to the original value if resolution failed for some reason
-  // (e.g. the value wasn't actually a valid <color>, like a box-shadow or
-  // background-image string containing an oklch() token inside it).
-  if (!resolved || resolved === '') return value;
-
-  // For composite properties like box-shadow/background-image that merely
-  // *contain* an oklch() token rather than being one, replace just the
-  // matched color functions rather than clobbering the whole value.
-  if (value.trim() !== value.match(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/i)?.[0]) {
-    return value.replace(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/gi, (match) => {
-      const p = document.createElement('span');
-      p.style.display = 'none';
-      p.style.color = match;
-      document.body.appendChild(p);
-      const r = getComputedStyle(p).color;
-      document.body.removeChild(p);
-      return r || match;
-    });
-  }
-
-  return resolved;
-};
-
-const renderElementToCanvas = async (element) => {
-  return html2canvas(element, {
-    backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
-    onclone: (clonedDocument) => {
-      clonedDocument.querySelectorAll('link[rel="stylesheet"], style').forEach((stylesheet) => stylesheet.remove());
-
-      const sourceNodes = [element, ...element.querySelectorAll('*')];
-      const clonedNodes = clonedDocument.querySelectorAll('*');
-
-      sourceNodes.forEach((sourceNode, index) => {
-        const clonedNode = clonedNodes[index];
-        if (!clonedNode) return;
-
-        const computed = window.getComputedStyle(sourceNode);
-        let cssText = computed.cssText || '';
-
-        if (cssText) {
-          // cssText is a single string here; sanitize any oklch()/etc tokens
-          // it contains in one pass.
-          clonedNode.style.cssText = /(oklch|oklab|lab|lch|color-mix)\(/i.test(cssText)
-            ? cssText.replace(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/gi, (match) => resolveToRgb(match))
-            : cssText;
-        } else {
-          for (let propertyIndex = 0; propertyIndex < computed.length; propertyIndex += 1) {
-            const property = computed[propertyIndex];
-            const rawValue = computed.getPropertyValue(property);
-            const value = COLOR_PROPERTIES.includes(property) ? resolveToRgb(rawValue) : rawValue;
-            clonedNode.style.setProperty(property, value);
-          }
-        }
-      });
-    }
+  const cards = [
+    ['Revenue', `Rs. ${currency(kpis.totalRevenue)}`, `Today Rs. ${currency(kpis.todayRevenue)}`, '#ecfdf5', '#047857'],
+    ['Estimated Profit', `Rs. ${currency(kpis.estimatedProfit)}`, 'Approx. 12% margin', '#eff6ff', '#0369a1'],
+    ['Orders', String(kpis.totalOrders || 0), `Today ${kpis.todayOrders || 0}`, '#fff7ed', '#c2410c'],
+    ['Pending Udhar', `Rs. ${currency(kpis.totalUdhar)}`, 'Credit outstanding', '#fffbeb', '#b45309']
+  ];
+  cards.forEach((card, index) => {
+    const x = 50 + (index % 2) * 330;
+    const y = 140 + Math.floor(index / 2) * 150;
+    context.fillStyle = card[3];
+    context.fillRect(x, y, 300, 120);
+    context.fillStyle = card[4];
+    context.font = 'bold 16px Arial';
+    context.fillText(card[0].toUpperCase(), x + 20, y + 30);
+    context.font = 'bold 28px Arial';
+    context.fillText(card[1], x + 20, y + 70);
+    context.font = '15px Arial';
+    context.fillText(card[2], x + 20, y + 98);
   });
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(50, 470, 620, 260);
+  context.fillStyle = '#1e293b';
+  context.font = 'bold 20px Arial';
+  context.fillText('Revenue trend - last 7 days', 75, 505);
+  const maxRevenue = Math.max(...trendOrders.map((day) => day.revenue || 0), 1);
+  trendOrders.forEach((day, index) => {
+    const barHeight = Math.max(((day.revenue || 0) / maxRevenue) * 150, 3);
+    const x = 85 + index * 75;
+    context.fillStyle = '#10b981';
+    context.fillRect(x, 680 - barHeight, 42, barHeight);
+    context.fillStyle = '#64748b';
+    context.font = '12px Arial';
+    context.fillText(day._id.slice(5), x, 705);
+  });
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(710, 470, 640, 260);
+  context.fillStyle = '#1e293b';
+  context.font = 'bold 20px Arial';
+  context.fillText('Products creating most value', 735, 505);
+  const maxSales = Math.max(...topProducts.map((product) => product.totalSales || 0), 1);
+  topProducts.slice(0, 5).forEach((product, index) => {
+    const y = 545 + index * 34;
+    context.fillStyle = '#334155';
+    context.font = 'bold 15px Arial';
+    context.fillText(`${index + 1}. ${product._id}`, 735, y);
+    context.fillStyle = '#10b981';
+    context.fillRect(735, y + 8, 400 * ((product.totalSales || 0) / maxSales), 8);
+    context.fillStyle = '#047857';
+    context.font = 'bold 14px Arial';
+    context.fillText(`Rs. ${currency(product.totalSales)}`, 1160, y);
+  });
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(50, 770, 1300, 210);
+  context.fillStyle = '#1e293b';
+  context.font = 'bold 20px Arial';
+  context.fillText('Operational health and payment mix', 75, 805);
+  context.font = '16px Arial';
+  context.fillStyle = '#475569';
+  context.fillText(`Active customers: ${kpis.activeCustomers || 0}`, 75, 850);
+  context.fillText(`Low stock alerts: ${kpis.lowStockCount || 0}`, 350, 850);
+  context.fillText(`Queue now: ${kpis.pendingOrders || 0}`, 625, 850);
+  context.fillText(`Paid orders: ${kpis.paidOrders || 0}`, 850, 850);
+  context.fillText(`Payment mix: ${paymentMix.map((payment) => `${payment._id || 'Pending'} Rs. ${currency(payment.value)}`).join(' | ') || 'No data'}`, 75, 910);
+  return canvas;
 };
 
 export const StoreAnalyticsDashboard = ({ storeId }) => {
@@ -158,16 +149,17 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
   const maxSales = Math.max(...topProducts.map((product) => product.totalSales || 0), 1);
 
   const exportReport = async (format) => {
-    if (!reportRef.current || exporting) return;
+    if (exporting) return;
     setExporting(true);
 
     try {
-      const canvas = await renderElementToCanvas(reportRef.current);
+      const canvas = drawOwnerReport(metrics);
+      const imageData = canvas.toDataURL('image/png');
 
       if (format === 'image') {
         const link = document.createElement('a');
         link.download = 'kiranaflow-owner-report.png';
-        link.href = canvas.toDataURL('image/png');
+        link.href = imageData;
         link.click();
         return;
       }
@@ -175,7 +167,7 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
       const width = doc.internal.pageSize.getWidth() - 32;
       const height = (canvas.height * width) / canvas.width;
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 16, 16, width, height);
+      doc.addImage(imageData, 'PNG', 16, 16, width, height);
       doc.save('kiranaflow-owner-report.pdf');
     } catch (error) {
       console.error('Export failed:', error);
