@@ -20,6 +20,34 @@ const currency = (value = 0) =>
     minimumFractionDigits: 0
   });
 
+const exportColorProperties = [
+  'color',
+  'backgroundColor',
+  'borderTopColor',
+  'borderRightColor',
+  'borderBottomColor',
+  'borderLeftColor',
+  'outlineColor',
+  'textDecorationColor',
+  'boxShadow'
+];
+
+const normalizeExportColors = (sourceDocument, clonedDocument) => {
+  const sourceElements = sourceDocument.querySelectorAll('*');
+  const clonedElements = clonedDocument.querySelectorAll('*');
+
+  sourceElements.forEach((sourceElement, index) => {
+    const clonedElement = clonedElements[index];
+    if (!clonedElement) return;
+
+    const computed = sourceDocument.defaultView.getComputedStyle(sourceElement);
+    exportColorProperties.forEach((property) => {
+      const value = computed[property];
+      if (value) clonedElement.style[property] = value;
+    });
+  });
+};
+
 export const StoreAnalyticsDashboard = ({ storeId }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +93,11 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
     if (!reportRef.current) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { backgroundColor: '#ffffff', scale: 2 });
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        onclone: (clonedDocument) => normalizeExportColors(document, clonedDocument)
+      });
       if (format === 'image') {
         const link = document.createElement('a');
         link.download = 'kiranaflow-owner-report.png';
