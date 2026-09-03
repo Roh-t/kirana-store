@@ -179,6 +179,13 @@ export const PublicStorefront = ({ slug }) => {
                 key={product._id}
                 className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-3 active:bg-gray-50/50 transition"
               >
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <ShoppingBag className="w-6 h-6 text-gray-300" />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-xs sm:text-sm font-bold text-gray-900 truncate">{product.name}</h3>
                   {product.regionalName && (

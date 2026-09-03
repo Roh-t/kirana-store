@@ -198,6 +198,9 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {products.map((p) => (
             <div key={p._id} className="p-3 rounded-2xl border border-gray-200/80 bg-white flex items-center justify-between gap-2">
+              <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" /> : <Package className="w-5 h-5 text-gray-300" />}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h4 className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">{p.name}</h4>
