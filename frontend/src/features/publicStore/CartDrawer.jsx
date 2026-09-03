@@ -144,7 +144,8 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           min="0.001"
                           step="0.001"
                           value={quantityDrafts[product._id] ?? displayQuantity}
@@ -163,7 +164,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             });
                           }}
                           aria-label={`Quantity for ${product.name}`}
-                          className="w-10 bg-transparent text-center text-xs font-bold outline-none appearance-none"
+                          className="w-14 bg-transparent text-center text-xs font-bold outline-none"
                         />
                         <select
                           value={displayUnit}
@@ -176,7 +177,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             }));
                           }}
                           aria-label={`Unit for ${product.name}`}
-                          className="bg-white text-green-700 border border-green-200 rounded-md px-1 py-0.5 text-[10px] font-black outline-none cursor-pointer"
+                          className="min-w-16 bg-white text-green-700 border border-green-200 rounded-md px-1.5 py-1 text-[10px] font-black outline-none cursor-pointer"
                         >
                           {getQuantityUnitOptions(product.unit).map(({ unit }) => (
                             <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>

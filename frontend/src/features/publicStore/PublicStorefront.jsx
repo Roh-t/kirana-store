@@ -217,7 +217,8 @@ export const PublicStorefront = ({ slug }) => {
                         <Minus className="w-3.5 h-3.5" />
                       </button>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         min="0.001"
                         step="0.001"
                         value={quantityDrafts[product._id] ?? displayQuantity}
@@ -237,7 +238,7 @@ export const PublicStorefront = ({ slug }) => {
                         }}
                         onClick={(event) => event.stopPropagation()}
                         aria-label={`Quantity for ${product.name}`}
-                        className="w-10 bg-transparent text-center text-xs font-black outline-none appearance-none"
+                        className="w-14 bg-transparent text-center text-xs font-black outline-none"
                       />
                       <select
                         value={displayUnit}
@@ -250,7 +251,7 @@ export const PublicStorefront = ({ slug }) => {
                           }));
                         }}
                         aria-label={`Unit for ${product.name}`}
-                        className="bg-green-700 text-white border border-green-400 rounded-md px-1 py-0.5 text-[10px] font-black outline-none cursor-pointer"
+                        className="min-w-16 bg-green-700 text-white border border-green-400 rounded-md px-1.5 py-1 text-[10px] font-black outline-none cursor-pointer"
                       >
                         {getQuantityUnitOptions(product.unit).map(({ unit }) => (
                           <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
