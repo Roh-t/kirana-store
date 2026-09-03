@@ -32,7 +32,34 @@ const exportColorProperties = [
   'boxShadow'
 ];
 
+const oklchToRgb = (value) => {
+  const match = value.match(/^oklch\(\s*([\d.]+)%?\s+([\d.]+)%?\s+([\d.]+)(?:deg)?(?:\s*\/\s*([\d.]+)%?)?\s*\)$/i);
+  if (!match) return value;
+
+  const lightness = Number(match[1]) / (value.includes('%') ? 100 : 1);
+  const chroma = Number(match[2]) / (value.match(/oklch\(\s*[\d.]+%[^)]*\s[\d.]+%/) ? 100 : 1);
+  const hue = (Number(match[3]) * Math.PI) / 180;
+  const alpha = match[4] ? Number(match[4]) / (value.includes(`${match[4]}%`) ? 100 : 1) : 1;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = Math.pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3);
+  const m = Math.pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3);
+  const s = Math.pow(lightness - 0.0894841775 * a - 1.291485548 * b, 3);
+  const toSrgb = (channel) => {
+    const clipped = Math.max(0, Math.min(1, channel));
+    return Math.round((clipped <= 0.0031308 ? 12.92 * clipped : 1.055 * Math.pow(clipped, 1 / 2.4) - 0.055) * 255);
+  };
+
+  return `rgba(${toSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s)}, ${toSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s)}, ${toSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)}, ${alpha})`;
+};
+
+const replaceOklchColors = (value) => value.replace(/oklch\([^)]*\)/gi, oklchToRgb);
+
 const normalizeExportColors = (sourceDocument, clonedDocument) => {
+  clonedDocument.querySelectorAll('style').forEach((style) => {
+    style.textContent = replaceOklchColors(style.textContent);
+  });
+
   const sourceElements = sourceDocument.querySelectorAll('*');
   const clonedElements = clonedDocument.querySelectorAll('*');
 
@@ -43,7 +70,7 @@ const normalizeExportColors = (sourceDocument, clonedDocument) => {
     const computed = sourceDocument.defaultView.getComputedStyle(sourceElement);
     exportColorProperties.forEach((property) => {
       const value = computed[property];
-      if (value) clonedElement.style[property] = value;
+      if (value) clonedElement.style[property] = replaceOklchColors(value);
     });
   });
 };
