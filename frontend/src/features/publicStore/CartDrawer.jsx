@@ -16,6 +16,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
     notes,
     setCustomerNotes,
     updateQuantity,
+    setQuantity,
     removeFromCart,
     clearCart
   } = useCart();
@@ -134,7 +135,15 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="px-2 text-xs font-bold">{quantity}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={quantity}
+                          onChange={(event) => setQuantity(product, event.target.value)}
+                          aria-label={`Quantity for ${product.name}`}
+                          className="w-10 bg-transparent text-center text-xs font-bold outline-none appearance-none"
+                        />
                         <button
                           onClick={() => updateQuantity(product, 1)}
                           className="p-1 text-gray-600 hover:bg-gray-200 rounded-r-lg"

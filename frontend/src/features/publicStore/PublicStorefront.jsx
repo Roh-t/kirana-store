@@ -20,7 +20,7 @@ export const PublicStorefront = ({ slug }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { items, totalItemsCount, subTotal, updateQuantity } = useCart();
+  const { items, totalItemsCount, subTotal, updateQuantity, setQuantity } = useCart();
 
   const loadStorefront = async () => {
     try {
@@ -211,7 +211,16 @@ export const PublicStorefront = ({ slug }) => {
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="px-2.5 text-xs font-black">{qty}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={qty}
+                        onChange={(event) => setQuantity(product, event.target.value)}
+                        onClick={(event) => event.stopPropagation()}
+                        aria-label={`Quantity for ${product.name}`}
+                        className="w-10 bg-transparent text-center text-xs font-black outline-none appearance-none"
+                      />
                       <button
                         onClick={() => updateQuantity(product, 1)}
                         className="p-2.5 active:bg-green-700 rounded-r-xl transition"

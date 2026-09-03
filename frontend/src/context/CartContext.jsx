@@ -53,6 +53,21 @@ export const CartProvider = ({ slug, children }) => {
     });
   };
 
+  const setQuantity = (product, quantity) => {
+    const nextQuantity = Number(quantity);
+
+    if (!Number.isInteger(nextQuantity) || nextQuantity < 1) return;
+
+    setItems((prev) => ({
+      ...prev,
+      [product._id]: {
+        product,
+        quantity: nextQuantity,
+        lineTotal: nextQuantity * product.sellingPrice
+      }
+    }));
+  };
+
   const removeFromCart = (productId) => {
     setItems((prev) => {
       const copy = { ...prev };
@@ -85,6 +100,7 @@ export const CartProvider = ({ slug, children }) => {
         notes,
         setCustomerNotes,
         updateQuantity,
+        setQuantity,
         removeFromCart,
         clearCart
       }}
