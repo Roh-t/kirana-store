@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { analyticsService } from '../../services/analyticsService';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   TrendingUp,
   Award,
@@ -19,72 +20,31 @@ const currency = (value = 0) =>
     minimumFractionDigits: 0
   });
 
-/**
- * Native, modern snapshot generator that doesn't rely on buggy CSS parsers.
- * Supports Tailwind CSS v4, oklch colors, CSS variables, and Lucide icons.
- */
 const renderElementToCanvas = async (element) => {
-  const rect = element.getBoundingClientRect();
-  const width = Math.ceil(rect.width || element.offsetWidth || 800);
-  const height = Math.ceil(rect.height || element.offsetHeight || 600);
+  return html2canvas(element, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    onclone: (clonedDocument) => {
+      clonedDocument.querySelectorAll('link[rel="stylesheet"], style').forEach((stylesheet) => stylesheet.remove());
 
-  // Deep clone the node
-  const clone = element.cloneNode(true);
-
-  // Copy computed styles so layout and styles remain intact in the snapshot
-  const origNodes = [element, ...element.querySelectorAll('*')];
-  const cloneNodes = [clone, ...clone.querySelectorAll('*')];
-
-  origNodes.forEach((orig, idx) => {
-    const dst = cloneNodes[idx];
-    if (!dst) return;
-    const computed = window.getComputedStyle(orig);
-    
-    let cssText = '';
-    for (let i = 0; i < computed.length; i++) {
-      const prop = computed[i];
-      cssText += `${prop}:${computed.getPropertyValue(prop)};`;
+      const sourceNodes = [element, ...element.querySelectorAll('*')];
+      const clonedNodes = clonedDocument.querySelectorAll('*');
+      sourceNodes.forEach((sourceNode, index) => {
+        const clonedNode = clonedNodes[index];
+        if (!clonedNode) return;
+        clonedNode.style.cssText = window.getComputedStyle(sourceNode).cssText || '';
+        if (!clonedNode.style.cssText) {
+          const computed = window.getComputedStyle(sourceNode);
+          for (let propertyIndex = 0; propertyIndex < computed.length; propertyIndex += 1) {
+            const property = computed[propertyIndex];
+            clonedNode.style.setProperty(property, computed.getPropertyValue(property));
+          }
+        }
+      });
     }
-    dst.style.cssText = cssText;
   });
-
-  const wrapper = document.createElement('div');
-  wrapper.appendChild(clone);
-  const serializedHtml = wrapper.innerHTML;
-
-  const svgData = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;box-sizing:border-box;">
-          ${serializedHtml}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
-
-  const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-
-  const img = new window.Image();
-  const scale = 2; // 2x resolution for crisp text
-
-  await new Promise((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = (e) => reject(new Error('Failed to create dashboard snapshot: ' + e));
-    img.src = url;
-  });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.scale(scale, scale);
-  ctx.drawImage(img, 0, 0);
-
-  URL.revokeObjectURL(url);
-  return canvas;
 };
 
 export const StoreAnalyticsDashboard = ({ storeId }) => {
