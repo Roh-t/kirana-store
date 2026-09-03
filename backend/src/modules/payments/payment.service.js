@@ -38,10 +38,17 @@ export class PaymentService {
     });
 
     // 3. Accumulate total payments for order
-    const allPayments = await Payment.find({ storeId, orderId: order._id, status: 'SUCCESS' });
+    const allPayments = await Payment.find({
+      storeId,
+      orderId: order._id,
+      status: 'SUCCESS',
+      method: { $ne: 'UDHAR' }
+    });
     const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
-    if (totalPaid >= order.grandTotal) {
+    if (method === 'UDHAR') {
+      order.paymentStatus = 'PENDING';
+    } else if (totalPaid >= order.grandTotal) {
       order.paymentStatus = 'PAID';
     } else if (totalPaid > 0) {
       order.paymentStatus = 'PARTIALLY_PAID';
@@ -51,7 +58,11 @@ export class PaymentService {
     // 4. Update Customer Lifetime Spent
     const customer = await Customer.findById(order.customerId);
     if (customer) {
-      customer.totalSpent += amount;
+      if (method === 'UDHAR') {
+        customer.udharBalance += amount;
+      } else {
+        customer.totalSpent += amount;
+      }
       await customer.save();
     }
 
