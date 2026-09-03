@@ -20,6 +20,64 @@ const currency = (value = 0) =>
     minimumFractionDigits: 0
   });
 
+// Properties that can legitimately hold oklch()/color-mix()/lab() values in
+// modern browsers (e.g. Tailwind v4's default palette). html2canvas's CSS
+// parser only understands rgb()/rgba()/hsl()/hex, so anything resolved to
+// oklch() must be converted before html2canvas sees it.
+const COLOR_PROPERTIES = [
+  'color',
+  'background-color',
+  'border-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'outline-color',
+  'text-decoration-color',
+  'fill',
+  'stroke',
+  'box-shadow',
+  'background-image'
+];
+
+// Resolves any unsupported CSS color function (oklch, lab, lch, color-mix,
+// etc.) to an rgb()/rgba() string the browser itself computes, by bouncing
+// the value through a throwaway element's `color` property.
+const resolveToRgb = (value) => {
+  if (!value || typeof value !== 'string') return value;
+  const hasModernColorFn = /(oklch|oklab|lab|lch|color-mix)\(/i.test(value);
+  if (!hasModernColorFn) return value;
+
+  const probe = document.createElement('span');
+  probe.style.display = 'none';
+  probe.style.color = value;
+  document.body.appendChild(probe);
+  const resolved = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+
+  // Fall back to the original value if resolution failed for some reason
+  // (e.g. the value wasn't actually a valid <color>, like a box-shadow or
+  // background-image string containing an oklch() token inside it).
+  if (!resolved || resolved === '') return value;
+
+  // For composite properties like box-shadow/background-image that merely
+  // *contain* an oklch() token rather than being one, replace just the
+  // matched color functions rather than clobbering the whole value.
+  if (value.trim() !== value.match(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/i)?.[0]) {
+    return value.replace(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/gi, (match) => {
+      const p = document.createElement('span');
+      p.style.display = 'none';
+      p.style.color = match;
+      document.body.appendChild(p);
+      const r = getComputedStyle(p).color;
+      document.body.removeChild(p);
+      return r || match;
+    });
+  }
+
+  return resolved;
+};
+
 const renderElementToCanvas = async (element) => {
   return html2canvas(element, {
     backgroundColor: '#ffffff',
@@ -31,15 +89,26 @@ const renderElementToCanvas = async (element) => {
 
       const sourceNodes = [element, ...element.querySelectorAll('*')];
       const clonedNodes = clonedDocument.querySelectorAll('*');
+
       sourceNodes.forEach((sourceNode, index) => {
         const clonedNode = clonedNodes[index];
         if (!clonedNode) return;
-        clonedNode.style.cssText = window.getComputedStyle(sourceNode).cssText || '';
-        if (!clonedNode.style.cssText) {
-          const computed = window.getComputedStyle(sourceNode);
+
+        const computed = window.getComputedStyle(sourceNode);
+        let cssText = computed.cssText || '';
+
+        if (cssText) {
+          // cssText is a single string here; sanitize any oklch()/etc tokens
+          // it contains in one pass.
+          clonedNode.style.cssText = /(oklch|oklab|lab|lch|color-mix)\(/i.test(cssText)
+            ? cssText.replace(/(oklch|oklab|lab|lch|color-mix)\([^)]*\)/gi, (match) => resolveToRgb(match))
+            : cssText;
+        } else {
           for (let propertyIndex = 0; propertyIndex < computed.length; propertyIndex += 1) {
             const property = computed[propertyIndex];
-            clonedNode.style.setProperty(property, computed.getPropertyValue(property));
+            const rawValue = computed.getPropertyValue(property);
+            const value = COLOR_PROPERTIES.includes(property) ? resolveToRgb(rawValue) : rawValue;
+            clonedNode.style.setProperty(property, value);
           }
         }
       });
