@@ -23,6 +23,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
 
   const [submitting, setSubmitting] = useState(false);
   const [validationError, setValidationError] = useState(null);
+  const [quantityDrafts, setQuantityDrafts] = useState({});
 
   if (!isOpen) return null;
 
@@ -137,13 +138,27 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         </button>
                         <input
                           type="number"
-                          min="1"
-                          step="1"
-                          value={quantity}
-                          onChange={(event) => setQuantity(product, event.target.value)}
+                          min="0.001"
+                          step="0.001"
+                          value={quantityDrafts[product._id] ?? quantity}
+                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(quantity) }))}
+                          onChange={(event) => {
+                            if (/^\d*\.?\d*$/.test(event.target.value)) {
+                              setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                            }
+                          }}
+                          onBlur={(event) => {
+                            setQuantity(product, event.target.value);
+                            setQuantityDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[product._id];
+                              return next;
+                            });
+                          }}
                           aria-label={`Quantity for ${product.name}`}
                           className="w-10 bg-transparent text-center text-xs font-bold outline-none appearance-none"
                         />
+                        <span className="pr-1.5 text-[10px] font-bold text-gray-500">{product.unit}</span>
                         <button
                           onClick={() => updateQuantity(product, 1)}
                           className="p-1 text-gray-600 hover:bg-gray-200 rounded-r-lg"

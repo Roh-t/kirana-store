@@ -56,7 +56,7 @@ export const CartProvider = ({ slug, children }) => {
   const setQuantity = (product, quantity) => {
     const nextQuantity = Number(quantity);
 
-    if (!Number.isInteger(nextQuantity) || nextQuantity < 1) return;
+    if (!Number.isFinite(nextQuantity) || nextQuantity <= 0) return;
 
     setItems((prev) => ({
       ...prev,
@@ -82,7 +82,7 @@ export const CartProvider = ({ slug, children }) => {
   };
 
   const itemList = Object.values(items);
-  const totalItemsCount = itemList.reduce((sum, i) => sum + i.quantity, 0);
+  const totalItemsCount = itemList.length;
   const subTotal = itemList.reduce((sum, i) => sum + i.lineTotal, 0);
 
   return (

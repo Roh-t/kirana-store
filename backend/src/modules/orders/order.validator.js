@@ -42,7 +42,7 @@ export class OrderValidator {
         if (!item.productId) {
           errors.push({ field: `items[${index}].productId`, message: 'Product ID is required' });
         }
-        if (!item.quantity || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || item.quantity <= 0) {
           errors.push({ field: `items[${index}].quantity`, message: 'Valid quantity > 0 is required' });
         }
       });

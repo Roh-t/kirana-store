@@ -16,6 +16,7 @@ export const PublicStorefront = ({ slug }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAiVoiceOpen, setIsAiVoiceOpen] = useState(false);
+  const [quantityDrafts, setQuantityDrafts] = useState({});
   const [placedOrder, setPlacedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -213,14 +214,28 @@ export const PublicStorefront = ({ slug }) => {
                       </button>
                       <input
                         type="number"
-                        min="1"
-                        step="1"
-                        value={qty}
-                        onChange={(event) => setQuantity(product, event.target.value)}
+                        min="0.001"
+                        step="0.001"
+                        value={quantityDrafts[product._id] ?? qty}
+                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(qty) }))}
+                        onChange={(event) => {
+                          if (/^\d*\.?\d*$/.test(event.target.value)) {
+                            setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                          }
+                        }}
+                        onBlur={(event) => {
+                          setQuantity(product, event.target.value);
+                          setQuantityDrafts((prev) => {
+                            const next = { ...prev };
+                            delete next[product._id];
+                            return next;
+                          });
+                        }}
                         onClick={(event) => event.stopPropagation()}
                         aria-label={`Quantity for ${product.name}`}
                         className="w-10 bg-transparent text-center text-xs font-black outline-none appearance-none"
                       />
+                      <span className="pr-2 text-[10px] font-bold">{product.unit}</span>
                       <button
                         onClick={() => updateQuantity(product, 1)}
                         className="p-2.5 active:bg-green-700 rounded-r-xl transition"
