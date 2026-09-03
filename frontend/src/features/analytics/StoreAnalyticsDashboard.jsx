@@ -20,58 +20,54 @@ const currency = (value = 0) =>
     minimumFractionDigits: 0
   });
 
-const exportColorProperties = [
-  'color',
-  'backgroundColor',
-  'borderTopColor',
-  'borderRightColor',
-  'borderBottomColor',
-  'borderLeftColor',
-  'outlineColor',
-  'textDecorationColor',
-  'boxShadow'
-];
-
-const oklchToRgb = (value) => {
-  const match = value.match(/^oklch\(\s*([\d.]+)%?\s+([\d.]+)%?\s+([\d.]+)(?:deg)?(?:\s*\/\s*([\d.]+)%?)?\s*\)$/i);
-  if (!match) return value;
-
-  const lightness = Number(match[1]) / (value.includes('%') ? 100 : 1);
-  const chroma = Number(match[2]) / (value.match(/oklch\(\s*[\d.]+%[^)]*\s[\d.]+%/) ? 100 : 1);
-  const hue = (Number(match[3]) * Math.PI) / 180;
-  const alpha = match[4] ? Number(match[4]) / (value.includes(`${match[4]}%`) ? 100 : 1) : 1;
-  const a = chroma * Math.cos(hue);
-  const b = chroma * Math.sin(hue);
-  const l = Math.pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3);
-  const m = Math.pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3);
-  const s = Math.pow(lightness - 0.0894841775 * a - 1.291485548 * b, 3);
-  const toSrgb = (channel) => {
-    const clipped = Math.max(0, Math.min(1, channel));
-    return Math.round((clipped <= 0.0031308 ? 12.92 * clipped : 1.055 * Math.pow(clipped, 1 / 2.4) - 0.055) * 255);
-  };
-
-  return `rgba(${toSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s)}, ${toSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s)}, ${toSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)}, ${alpha})`;
+/**
+ * Converts modern colors (oklch, lab, color-mix) into standard sRGB
+ * using the browser's native canvas context.
+ */
+const convertOklchColor = (val, ctx) => {
+  if (!val || typeof val !== 'string' || !val.includes('oklch')) return val;
+  return val.replace(/oklch\([^)]+\)/gi, (match) => {
+    try {
+      ctx.fillStyle = '#000000';
+      ctx.fillStyle = match;
+      return ctx.fillStyle;
+    } catch {
+      return match;
+    }
+  });
 };
 
-const replaceOklchColors = (value) => value.replace(/oklch\([^)]*\)/gi, oklchToRgb);
+/**
+ * Inlines computed styles to all cloned elements and cleans oklch colors.
+ */
+const prepareClonedElement = (sourceEl, targetEl, clonedDoc) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
 
-const normalizeExportColors = (sourceDocument, clonedDocument) => {
-  clonedDocument.querySelectorAll('style').forEach((style) => {
-    style.textContent = replaceOklchColors(style.textContent);
-  });
+  // Strip global stylesheets from the cloned document so html2canvas doesn't fail parsing them
+  clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => el.remove());
 
-  const sourceElements = sourceDocument.querySelectorAll('*');
-  const clonedElements = clonedDocument.querySelectorAll('*');
+  const sourceNodes = [sourceEl, ...sourceEl.querySelectorAll('*')];
+  const targetNodes = [targetEl, ...targetEl.querySelectorAll('*')];
 
-  sourceElements.forEach((sourceElement, index) => {
-    const clonedElement = clonedElements[index];
-    if (!clonedElement) return;
+  sourceNodes.forEach((src, idx) => {
+    const dst = targetNodes[idx];
+    if (!dst) return;
 
-    const computed = sourceDocument.defaultView.getComputedStyle(sourceElement);
-    exportColorProperties.forEach((property) => {
-      const value = computed[property];
-      if (value) clonedElement.style[property] = replaceOklchColors(value);
-    });
+    const computed = window.getComputedStyle(src);
+    for (let i = 0; i < computed.length; i++) {
+      const prop = computed[i];
+      const val = computed.getPropertyValue(prop);
+      if (val) {
+        dst.style.setProperty(
+          prop,
+          convertOklchColor(val, ctx),
+          computed.getPropertyPriority(prop)
+        );
+      }
+    }
   });
 };
 
@@ -117,14 +113,19 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
   const maxSales = Math.max(...topProducts.map((product) => product.totalSales || 0), 1);
 
   const exportReport = async (format) => {
-    if (!reportRef.current) return;
+    if (!reportRef.current || exporting) return;
     setExporting(true);
     try {
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
-        onclone: (clonedDocument) => normalizeExportColors(document, clonedDocument)
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDoc, clonedElement) => {
+          prepareClonedElement(reportRef.current, clonedElement, clonedDoc);
+        }
       });
+
       if (format === 'image') {
         const link = document.createElement('a');
         link.download = 'kiranaflow-owner-report.png';
@@ -138,6 +139,8 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
       const height = (canvas.height * width) / canvas.width;
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 16, 16, width, height);
       doc.save('kiranaflow-owner-report.pdf');
+    } catch (error) {
+      console.error('Export failed:', error);
     } finally {
       setExporting(false);
     }
@@ -223,27 +226,27 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
         <section className="bg-white border border-slate-200 rounded-xl p-3.5">
           <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"><Award className="w-4 h-4 text-amber-600" /> Products creating most value</h4>
 
-        {topProducts.length === 0 ? (
-          <div className="text-xs text-stone-400 py-4 text-center bg-amber-50 rounded-xl border border-dashed border-amber-200">
-            Complete orders to view top sellers.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {topProducts.map((prod, idx) => (
-              <div key={`${prod._id}-${idx}`} className="text-xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-5 h-5 bg-amber-50 border border-amber-200 font-bold rounded-md flex items-center justify-center text-stone-700 text-[11px] shrink-0">
-                    #{idx + 1}
-                  </span>
-                  <span className="font-bold text-slate-900 truncate flex-1">{prod._id}</span>
-                  <span className="font-extrabold text-emerald-700">₹{currency(prod.totalSales)}</span>
+          {topProducts.length === 0 ? (
+            <div className="text-xs text-stone-400 py-4 text-center bg-amber-50 rounded-xl border border-dashed border-amber-200">
+              Complete orders to view top sellers.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {topProducts.map((prod, idx) => (
+                <div key={`${prod._id}-${idx}`} className="text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 bg-amber-50 border border-amber-200 font-bold rounded-md flex items-center justify-center text-stone-700 text-[11px] shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <span className="font-bold text-slate-900 truncate flex-1">{prod._id}</span>
+                    <span className="font-extrabold text-emerald-700">₹{currency(prod.totalSales)}</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full mt-1.5"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(prod.totalSales / maxSales) * 100}%` }} /></div>
+                  <span className="text-[10px] text-slate-400">{prod.totalQuantity || 0} units sold</span>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full mt-1.5"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(prod.totalSales / maxSales) * 100}%` }} /></div>
-                <span className="text-[10px] text-slate-400">{prod.totalQuantity || 0} units sold</span>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="bg-white border border-slate-200 rounded-xl p-3.5">
