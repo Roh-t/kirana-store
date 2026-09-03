@@ -88,7 +88,7 @@ export class PublicService {
     }
 
     const orders = await Order.find({ storeId: store._id, customerId: customer._id })
-      .select('orderNumber orderType items subTotal grandTotal orderStatus createdAt')
+      .select('orderNumber orderType items subTotal grandTotal orderStatus paymentStatus estimatedReadyAt createdAt')
       .populate({
         path: 'items.productId',
         select: 'name regionalName unit unitQuantity sellingPrice mrp isAvailable isDeleted'

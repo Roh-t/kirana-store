@@ -57,6 +57,7 @@ const orderSchema = new mongoose.Schema(
     stockDeducted: { type: Boolean, default: false }, // Tracks automated inventory deduction
     cancellationReason: { type: String, default: null },
     notes: { type: String, default: null, maxlength: 300 },
+    estimatedReadyAt: { type: Date, default: null },
     fulfilledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     completedAt: { type: Date, default: null }
   },

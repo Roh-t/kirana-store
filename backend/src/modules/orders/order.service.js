@@ -79,6 +79,15 @@ export class OrderService {
 
     const grandTotal = subTotal + taxTotal;
     const orderNumber = await this.generateOrderNumber(store._id);
+    const activeQueueCount = await Order.countDocuments({
+      storeId: store._id,
+      orderStatus: { $in: ['PENDING', 'ACCEPTED', 'PREPARING', 'PACKING'] }
+    });
+    const preparationMinutes = store.businessConfig.preparationMinutes || 10;
+    const bufferMinutes = store.businessConfig.bufferMinutes || 0;
+    const workerCount = store.businessConfig.workerCount || 1;
+    const queuePosition = Math.floor(activeQueueCount / workerCount) + 1;
+    const estimatedReadyAt = new Date(Date.now() + queuePosition * (preparationMinutes + bufferMinutes) * 60000);
 
     const order = await Order.create({
       storeId: store._id,
@@ -95,6 +104,7 @@ export class OrderService {
       paymentStatus: 'PENDING',
       orderStatus: 'PENDING',
       stockDeducted: false,
+      estimatedReadyAt,
       notes: validatedData.notes
     });
 

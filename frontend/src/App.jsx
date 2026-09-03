@@ -13,6 +13,7 @@ import { InventoryManager } from './features/inventory/InventoryManager';
 import { CustomerManager } from './features/customers/CustomerManager';
 import { StoreAnalyticsDashboard } from './features/analytics/StoreAnalyticsDashboard';
 import { StaffManager } from './features/stores/StaffManager';
+import { StoreTimingSettings } from './features/stores/StoreTimingSettings';
 import { AuditLogViewer } from './features/auditLogs/AuditLogViewer';
 import { SuperAdminDashboard } from './features/admin/SuperAdminDashboard';
 import { PublicStorefront } from './features/publicStore/PublicStorefront';
@@ -249,6 +250,10 @@ function DashboardView() {
 
           {storeModuleTab === 'SETTINGS' && (
             <div className="space-y-6">
+              <StoreTimingSettings
+                store={activeStore}
+                onStoreUpdated={(updatedStore) => setActiveStore(updatedStore)}
+              />
               <StaffManager storeId={activeStore._id} />
               <AuditLogViewer storeId={activeStore._id} />
             </div>

@@ -48,7 +48,10 @@ export class StoreService {
         minOrderValue: validatedData.businessConfig?.minOrderValue || 0,
         autoAcceptOrders: validatedData.businessConfig?.autoAcceptOrders || false,
         enableDelivery: validatedData.businessConfig?.enableDelivery ?? true,
-        enablePickup: validatedData.businessConfig?.enablePickup ?? true
+        enablePickup: validatedData.businessConfig?.enablePickup ?? true,
+        preparationMinutes: validatedData.businessConfig?.preparationMinutes || 10,
+        bufferMinutes: validatedData.businessConfig?.bufferMinutes || 0,
+        workerCount: validatedData.businessConfig?.workerCount || 1
       },
       taxConfig: {
         gstin: validatedData.taxConfig?.gstin || null,

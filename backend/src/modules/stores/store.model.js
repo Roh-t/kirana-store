@@ -40,7 +40,10 @@ const storeSchema = new mongoose.Schema(
       minOrderValue: { type: Number, default: 0, min: 0 },
       autoAcceptOrders: { type: Boolean, default: false },
       enableDelivery: { type: Boolean, default: true },
-      enablePickup: { type: Boolean, default: true }
+      enablePickup: { type: Boolean, default: true },
+      preparationMinutes: { type: Number, default: 10, min: 1 },
+      bufferMinutes: { type: Number, default: 0, min: 0 },
+      workerCount: { type: Number, default: 1, min: 1 }
     },
     taxConfig: {
       gstin: {

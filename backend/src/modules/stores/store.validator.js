@@ -43,6 +43,28 @@ export class StoreValidator {
     if (data.phone && !/^\+91[6-9]\d{9}$/.test(data.phone.startsWith('+91') ? data.phone : `+91${data.phone}`)) {
       throw ApiError.badRequest('Validation failed', [{ field: 'phone', message: 'Invalid phone format' }]);
     }
+
+    if (data.businessConfig) {
+      const { preparationMinutes, bufferMinutes, workerCount } = data.businessConfig;
+      const errors = [];
+      if (preparationMinutes !== undefined && (!Number.isInteger(Number(preparationMinutes)) || Number(preparationMinutes) < 1)) {
+        errors.push({ field: 'businessConfig.preparationMinutes', message: 'Preparation time must be at least 1 minute' });
+      }
+      if (bufferMinutes !== undefined && (!Number.isInteger(Number(bufferMinutes)) || Number(bufferMinutes) < 0)) {
+        errors.push({ field: 'businessConfig.bufferMinutes', message: 'Buffer time cannot be negative' });
+      }
+      if (workerCount !== undefined && (!Number.isInteger(Number(workerCount)) || Number(workerCount) < 1)) {
+        errors.push({ field: 'businessConfig.workerCount', message: 'Worker count must be at least 1' });
+      }
+      if (errors.length > 0) throw ApiError.badRequest('Validation failed', errors);
+
+      data.businessConfig = {
+        ...data.businessConfig,
+        ...(preparationMinutes !== undefined && { preparationMinutes: Number(preparationMinutes) }),
+        ...(bufferMinutes !== undefined && { bufferMinutes: Number(bufferMinutes) }),
+        ...(workerCount !== undefined && { workerCount: Number(workerCount) })
+      };
+    }
     return data;
   }
 }

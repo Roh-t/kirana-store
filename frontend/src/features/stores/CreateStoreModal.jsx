@@ -16,7 +16,10 @@ export const CreateStoreModal = ({ onStoreCreated }) => {
       upiId: ''
     },
     businessConfig: {
-      minOrderValue: 0
+      minOrderValue: 0,
+      preparationMinutes: 10,
+      bufferMinutes: 0,
+      workerCount: 1
     }
   });
 
