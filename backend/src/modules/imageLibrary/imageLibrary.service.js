@@ -56,7 +56,9 @@ export class ImageLibraryService {
         httpCode: error.http_code,
         message: error.message
       });
-      const reason = error.message || 'Unknown Cloudinary error';
+      const reason = error.http_code === 403
+        ? 'Cloudinary denied upload permission for this API key. Enable upload permissions or create a key with upload access.'
+        : error.message || 'Unknown Cloudinary error';
       throw ApiError.badGateway(`Cloudinary upload failed: ${reason}`);
     }
     return ImageLibrary.create({
