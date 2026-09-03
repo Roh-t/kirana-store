@@ -15,7 +15,10 @@ export class AnalyticsService {
       todayOrderCount,
       udharAggregate,
       topProducts,
-      lowStockCount
+      lowStockCount,
+      trendOrders,
+      paymentMix,
+      customerCount
     ] = await Promise.all([
       // 1. Lifetime Revenue & Estimated Profit
       Order.aggregate([
@@ -69,12 +72,41 @@ export class AnalyticsService {
       Inventory.countDocuments({
         storeId,
         $expr: { $lte: ['$stockQuantity', '$reorderPoint'] }
-      })
+      }),
+
+      // 8. Seven-day revenue and order trend
+      Order.aggregate([
+        {
+          $match: {
+            storeId,
+            orderStatus: { $ne: 'CANCELLED' },
+            createdAt: { $gte: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000) }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$grandTotal' },
+            orders: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]),
+
+      // 9. Payment mix for completed revenue
+      Order.aggregate([
+        { $match: { storeId, orderStatus: { $ne: 'CANCELLED' } } },
+        { $group: { _id: '$paymentStatus', value: { $sum: '$grandTotal' }, orders: { $sum: 1 } } }
+      ]),
+
+      // 10. Active customer base
+      Customer.countDocuments({ storeId, status: 'ACTIVE' })
     ]);
 
     const statusCounts = {
       PENDING: 0,
       ACCEPTED: 0,
+      PREPARING: 0,
       PACKING: 0,
       READY: 0,
       COMPLETED: 0,
@@ -90,6 +122,7 @@ export class AnalyticsService {
     const totalRevenue = revenueAggregate[0]?.totalRevenue || 0;
     const todayRevenue = todayRevenueAggregate[0]?.todayRevenue || 0;
     const totalUdhar = udharAggregate[0]?.totalUdhar || 0;
+    const paidOrders = paymentMix.find((payment) => payment._id === 'PAID')?.orders || 0;
 
     // Estimate Profit (~12% average grocery margin calculation)
     const estimatedProfit = Math.round(totalRevenue * 0.12);
@@ -101,12 +134,20 @@ export class AnalyticsService {
         estimatedProfit,
         totalOrders,
         todayOrders: todayOrderCount,
-        pendingOrders: (statusCounts.PENDING || 0) + (statusCounts.ACCEPTED || 0) + (statusCounts.PACKING || 0),
+        pendingOrders:
+          (statusCounts.PENDING || 0) +
+          (statusCounts.ACCEPTED || 0) +
+          (statusCounts.PREPARING || 0) +
+          (statusCounts.PACKING || 0),
         totalUdhar,
-        lowStockCount
+        lowStockCount,
+        activeCustomers: customerCount,
+        paidOrders
       },
       statusCounts,
-      topProducts
+      topProducts,
+      trendOrders,
+      paymentMix
     };
   }
 }
