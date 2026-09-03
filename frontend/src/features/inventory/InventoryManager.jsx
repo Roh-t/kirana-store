@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
-import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -110,6 +110,13 @@ export const InventoryManager = ({ storeId }) => {
 
             return (
               <div key={inv._id} className="py-2.5 flex items-center justify-between gap-2">
+                <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                  {product?.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <Package className="w-5 h-5 text-gray-300" />
+                  )}
+                </div>
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="flex items-center gap-1.5">
                     <span className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">{product?.name}</span>

@@ -15,7 +15,7 @@ export class InventoryService {
     const inventoryRecords = await Inventory.find(query)
       .populate({
         path: 'productId',
-        select: 'name regionalName unit unitQuantity mrp sellingPrice barcode isAvailable categoryId',
+        select: 'name regionalName unit unitQuantity mrp sellingPrice barcode imageUrl isAvailable categoryId',
         populate: { path: 'categoryId', select: 'name' }
       })
       .sort({ stockQuantity: 1 });
