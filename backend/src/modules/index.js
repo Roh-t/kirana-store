@@ -13,3 +13,4 @@ export { Invoice } from '../modules/billing/invoice.model.js';
 export { Notification } from '../modules/notifications/notification.model.js';
 export { Subscription } from '../modules/subscriptions/subscription.model.js';
 export { AuditLog } from '../modules/auditLogs/auditLog.model.js';
+export { ImageLibrary } from '../modules/imageLibrary/imageLibrary.model.js';

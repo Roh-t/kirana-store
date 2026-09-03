@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
+import { adminService } from '../../services/adminService';
 import { Package, Plus, Search, Edit2, Trash2, Check, X, Barcode } from 'lucide-react';
 
 export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
@@ -13,6 +14,8 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState(null);
+  const [libraryImages, setLibraryImages] = useState([]);
+  const [imageSearch, setImageSearch] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +26,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
     mrp: '',
     sellingPrice: '',
     barcode: '',
+    imageUrl: '',
     taxRate: 0
   });
 
@@ -35,6 +39,8 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       ]);
       setProducts(prodRes.data);
       setCategories(catRes.data);
+      const imageRes = await adminService.getImageLibrary(imageSearch);
+      setLibraryImages(imageRes.data || []);
     } catch (err) {
       console.error('Failed to load catalog data', err);
     } finally {
@@ -46,7 +52,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
     if (storeId) {
       fetchData();
     }
-  }, [storeId, search, selectedCategory, catalogVersion]);
+  }, [storeId, search, selectedCategory, catalogVersion, imageSearch]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -100,6 +106,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       mrp: '',
       sellingPrice: '',
       barcode: '',
+      imageUrl: '',
       taxRate: 0
     });
   };
@@ -115,6 +122,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       mrp: p.mrp,
       sellingPrice: p.sellingPrice,
       barcode: p.barcode || '',
+      imageUrl: p.imageUrl || '',
       taxRate: p.taxRate || 0
     });
     setShowModal(true);
@@ -168,7 +176,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-xl outline-none bg-white font-bold text-gray-700 max-w-[130px]"
+          className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-xl outline-none bg-white font-bold text-gray-700 max-w-32.5"
         >
           <option value="">All Categories</option>
           {categories.map((c) => (
@@ -339,6 +347,35 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
                   onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-mono"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Product Image from Shared Database (Optional)</label>
+                <input
+                  type="text"
+                  value={imageSearch}
+                  onChange={(e) => setImageSearch(e.target.value)}
+                  placeholder="Search image label, e.g. atta"
+                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
+                />
+                {imageSearch && libraryImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {libraryImages.slice(0, 6).map((image) => (
+                      <button
+                        type="button"
+                        key={image._id}
+                        onClick={() => {
+                          setFormData({ ...formData, imageUrl: image.imageUrl });
+                          setImageSearch(image.label);
+                        }}
+                        className={`text-left border rounded-xl overflow-hidden ${formData.imageUrl === image.imageUrl ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}
+                      >
+                        <img src={image.imageUrl} alt={image.label} className="w-full aspect-square object-cover" />
+                        <span className="block px-1.5 py-1 text-[10px] font-bold truncate">{image.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">

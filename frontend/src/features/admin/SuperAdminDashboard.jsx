@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
-import { ShieldCheck, Store, Users, ShoppingBag, Search, Power } from 'lucide-react';
+import { ImageLibraryManager } from './ImageLibraryManager';
+import { ShieldCheck, Store, Users, ShoppingBag, Search, Power, Image } from 'lucide-react';
 
 export const SuperAdminDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('OVERVIEW');
 
   const fetchData = async () => {
     try {
@@ -41,7 +43,23 @@ export const SuperAdminDashboard = () => {
   };
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-5">
+    <div className="w-full space-y-5">
+      <div className="flex gap-2 bg-white rounded-2xl border border-gray-200 p-2 shadow-sm">
+        <button
+          onClick={() => setActiveTab('OVERVIEW')}
+          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 ${activeTab === 'OVERVIEW' ? 'bg-purple-700 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          <ShieldCheck className="w-4 h-4" /> Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('IMAGE_LIBRARY')}
+          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 ${activeTab === 'IMAGE_LIBRARY' ? 'bg-purple-700 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          <Image className="w-4 h-4" /> Image Database
+        </button>
+      </div>
+
+      {activeTab === 'IMAGE_LIBRARY' ? <ImageLibraryManager /> : <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-5">
       <div className="flex items-center justify-between pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 bg-purple-100 text-purple-800 rounded-xl flex items-center justify-center font-bold">
@@ -141,6 +159,7 @@ export const SuperAdminDashboard = () => {
           ))}
         </div>
       )}
+      </div>}
     </div>
   );
 };
