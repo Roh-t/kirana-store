@@ -15,5 +15,8 @@ export const env = {
   port: parseInt(process.env.PORT || '5000', 10),
   mongoUri: process.env.MONGO_URI,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  jwtSecret: process.env.JWT_SECRET || 'fallback_secret_for_development_mode'
+  jwtSecret: process.env.JWT_SECRET || 'fallback_secret_for_development_mode',
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME?.trim() || '',
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY?.trim() || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET?.trim() || ''
 };

@@ -1,4 +1,5 @@
 import cloudinary from '../../config/cloudinary.js';
+import { env } from '../../config/env.js';
 import { ImageLibrary } from './imageLibrary.model.js';
 import { ApiError } from '../../utils/apiError.js';
 
@@ -11,7 +12,7 @@ export class ImageLibraryService {
   }
 
   static async create(userId, data) {
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    if (!env.cloudinaryCloudName || !env.cloudinaryApiKey || !env.cloudinaryApiSecret) {
       throw ApiError.serviceUnavailable('Cloudinary is not configured on the server');
     }
 
@@ -32,7 +33,11 @@ export class ImageLibraryService {
         resource_type: 'image'
       });
     } catch (error) {
-      console.error('[Cloudinary] Image upload failed:', error.message);
+      console.error('[Cloudinary] Image upload failed:', {
+        name: error.name,
+        httpCode: error.http_code,
+        message: error.message
+      });
       throw ApiError.badGateway('Cloudinary rejected the image upload. Check the server Cloudinary credentials.');
     }
     return ImageLibrary.create({
