@@ -2,6 +2,15 @@ import { ImageLibraryService } from './imageLibrary.service.js';
 import { ApiResponse } from '../../utils/apiResponse.js';
 
 export class ImageLibraryController {
+  static async checkConnection(req, res, next) {
+    try {
+      const status = await ImageLibraryService.checkConnection();
+      return ApiResponse.success(res, { statusCode: 200, message: status.message, data: status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async list(req, res, next) {
     try {
       const images = await ImageLibraryService.list(req.query.search || '');

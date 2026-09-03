@@ -11,6 +11,7 @@ export const ImageLibraryManager = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [connection, setConnection] = useState(null);
 
   const fetchImages = async () => {
     try {
@@ -26,6 +27,7 @@ export const ImageLibraryManager = () => {
 
   useEffect(() => {
     fetchImages();
+    adminService.checkImageLibraryConnection().then((res) => setConnection(res.data)).catch((err) => setError(err.message));
   }, [search]);
 
   const handleUpload = async (event) => {
@@ -70,6 +72,7 @@ export const ImageLibraryManager = () => {
         <div><h3 className="text-base font-bold text-gray-900">Shared Image Database</h3><p className="text-xs text-gray-500">Upload labeled product images for every store owner</p></div>
       </div>
       {error && <div className="p-2.5 bg-red-50 text-red-700 rounded-xl text-xs font-semibold">{error}</div>}
+      {connection && <div className={`p-2.5 rounded-xl text-xs font-semibold ${connection.connected ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-800'}`}>{connection.message}</div>}
       <form onSubmit={handleUpload} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
         <label className="text-xs font-semibold text-gray-700">Label<input required value={label} onChange={(event) => setLabel(event.target.value)} placeholder="atta" className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500" /></label>
         <label className="text-xs font-semibold text-gray-700">Aliases<input value={aliases} onChange={(event) => setAliases(event.target.value)} placeholder="wheat flour, chakki atta" className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500" /></label>

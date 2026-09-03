@@ -11,6 +11,24 @@ export class ImageLibraryService {
     return ImageLibrary.find(query).sort({ createdAt: -1 }).limit(100);
   }
 
+  static async checkConnection() {
+    if (!env.cloudinaryCloudName || !env.cloudinaryApiKey || !env.cloudinaryApiSecret) {
+      return { configured: false, connected: false, message: 'Cloudinary environment variables are missing' };
+    }
+
+    try {
+      const result = await cloudinary.api.ping();
+      return { configured: true, connected: result.status === 'ok', message: 'Cloudinary connection is healthy' };
+    } catch (error) {
+      console.error('[Cloudinary] Connection check failed:', {
+        name: error.name,
+        httpCode: error.http_code,
+        message: error.message
+      });
+      return { configured: true, connected: false, message: error.message || 'Cloudinary authentication failed' };
+    }
+  }
+
   static async create(userId, data) {
     if (!env.cloudinaryCloudName || !env.cloudinaryApiKey || !env.cloudinaryApiSecret) {
       throw ApiError.serviceUnavailable('Cloudinary is not configured on the server');
@@ -38,7 +56,8 @@ export class ImageLibraryService {
         httpCode: error.http_code,
         message: error.message
       });
-      throw ApiError.badGateway('Cloudinary rejected the image upload. Check the server Cloudinary credentials.');
+      const reason = error.message || 'Unknown Cloudinary error';
+      throw ApiError.badGateway(`Cloudinary upload failed: ${reason}`);
     }
     return ImageLibrary.create({
       label: data.label.trim(),

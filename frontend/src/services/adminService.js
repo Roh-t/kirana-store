@@ -17,6 +17,10 @@ export const adminService = {
     return apiClient.get('/image-library', { params: { search } });
   },
 
+  async checkImageLibraryConnection() {
+    return apiClient.get('/image-library/connection');
+  },
+
   async uploadLibraryImage(imageData, label, aliases) {
     return apiClient.post('/image-library', { imageData, label, aliases });
   },
