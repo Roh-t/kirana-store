@@ -230,7 +230,7 @@ function DashboardView() {
             </div>
           )}
 
-          {storeModuleTab === 'QUEUE' && <OrderQueueDashboard storeId={activeStore._id} />}
+          {storeModuleTab === 'QUEUE' && <OrderQueueDashboard storeId={activeStore._id} store={activeStore} />}
 
           {storeModuleTab === 'CATALOG' && (
             <div className="space-y-6">

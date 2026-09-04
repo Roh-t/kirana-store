@@ -5,6 +5,7 @@ import { whatsappService } from '../../services/whatsappService';
 import { downloadOrderPdf } from '../../utils/pdfDownloader';
 import { InvoiceReceiptModal } from '../billing/InvoiceReceiptModal';
 import { PaymentModal } from '../payments/PaymentModal';
+import { OrderPdfModal } from '../../components/common/OrderPdfModal';
 import {
   ShoppingBag,
   BellRing,
@@ -14,6 +15,7 @@ import {
   CheckCheck,
   XCircle,
   RefreshCw,
+  Eye,
   Phone,
   User,
   MapPin,
@@ -40,7 +42,7 @@ const formatOrderTime = (value) => {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-export const OrderQueueDashboard = ({ storeId }) => {
+export const OrderQueueDashboard = ({ storeId, store }) => {
   const [orders, setOrders] = useState([]);
   const [statusSummary, setStatusSummary] = useState({});
   const [selectedStatus, setSelectedStatus] = useState('ALL');
@@ -50,6 +52,7 @@ export const OrderQueueDashboard = ({ storeId }) => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
+  const [previewOrder, setPreviewOrder] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const filteredOrders = orders.filter((order) => {
@@ -457,6 +460,17 @@ export const OrderQueueDashboard = ({ storeId }) => {
                         <button
                           onClick={(event) => {
                             event.stopPropagation();
+                            setPreviewOrder(order);
+                          }}
+                          className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition border border-emerald-200"
+                          title="View PDF Bill"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
                             handleDirectPdfDownload(order);
                           }}
                           className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
@@ -527,6 +541,14 @@ export const OrderQueueDashboard = ({ storeId }) => {
 
       {/* Thermal Receipt Modal */}
       <InvoiceReceiptModal invoiceData={invoiceData} onClose={() => setInvoiceData(null)} />
+
+      {/* View-only PDF preview; closing it does not download or save a file. */}
+      <OrderPdfModal
+        order={previewOrder}
+        store={store}
+        isOpen={!!previewOrder}
+        onClose={() => setPreviewOrder(null)}
+      />
 
       {/* Collect Payment / Dynamic UPI QR Modal */}
       {paymentOrder && (
