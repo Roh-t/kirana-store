@@ -107,13 +107,31 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       if (isManual) setLoading(true);
       const res = await orderService.getOrderQueue(storeId, { status: selectedStatus });
       setOrders(res.data);
-      if (res.meta?.statusSummary) {
-        const summary = res.meta.statusSummary;
+      const responseSummary = res.meta?.statusSummary || res.data?.meta?.statusSummary;
+      if (responseSummary) {
+        const summary = responseSummary;
         setStatusSummary(summary);
         if (summary.PENDING > prevPendingCount.current && prevPendingCount.current >= 0) {
           playChimeSound();
         }
         prevPendingCount.current = summary.PENDING;
+      } else if (Array.isArray(res.data)) {
+        setStatusSummary((currentSummary) => {
+          const fallbackSummary = { ...currentSummary };
+          const returnedCounts = res.data.reduce((counts, order) => {
+            if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
+            return counts;
+          }, {});
+
+          if (selectedStatus === 'ALL') {
+            Object.keys(fallbackSummary).forEach((status) => {
+              fallbackSummary[status] = returnedCounts[status] || 0;
+            });
+          } else {
+            fallbackSummary[selectedStatus] = returnedCounts[selectedStatus] || 0;
+          }
+          return fallbackSummary;
+        });
       }
     } catch (err) {
       console.error('Failed to load live order queue', err);
