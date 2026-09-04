@@ -251,15 +251,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             }`}
           >
             {tab.label}
-            {tab.count > 0 && (
-              <span
-                className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                  tab.badgeBg || (selectedStatus === tab.key ? 'bg-white text-green-800' : 'bg-gray-200 text-gray-800')
-                }`}
-              >
-                {tab.count}
-              </span>
-            )}
+            <span className="font-black opacity-80">· {tab.count}</span>
           </button>
         ))}
       </div>
