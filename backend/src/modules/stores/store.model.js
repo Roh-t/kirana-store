@@ -50,8 +50,8 @@ const storeSchema = new mongoose.Schema(
           _id: false,
           dayOfWeek: { type: Number, min: 0, max: 6, required: true },
           isOpen: { type: Boolean, default: true },
-          openTime: { type: String, default: '09:00', match: /^([01]\\d|2[0-3]):[0-5]\\d$/ },
-          closeTime: { type: String, default: '21:00', match: /^([01]\\d|2[0-3]):[0-5]\\d$/ }
+          openTime: { type: String, default: '09:00', match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+          closeTime: { type: String, default: '21:00', match: /^([01]\d|2[0-3]):[0-5]\d$/ }
         }],
         default: () => Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, isOpen: true, openTime: '09:00', closeTime: '21:00' }))
       }
