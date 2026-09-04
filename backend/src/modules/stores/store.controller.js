@@ -63,7 +63,7 @@ export class StoreController {
   static async updateStore(req, res, next) {
     try {
       const validatedData = StoreValidator.validateUpdateStore(req.body);
-      const updatedStore = await StoreService.updateStore(req.params.id, validatedData);
+      const updatedStore = await StoreService.updateStore(req.params.id, req.user._id, validatedData);
 
       return ApiResponse.success(res, {
         statusCode: 200,

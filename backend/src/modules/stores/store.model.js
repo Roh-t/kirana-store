@@ -44,6 +44,17 @@ const storeSchema = new mongoose.Schema(
       preparationMinutes: { type: Number, default: 10, min: 1 },
       bufferMinutes: { type: Number, default: 0, min: 0 },
       workerCount: { type: Number, default: 1, min: 1 }
+      ,manualClosureReason: { type: String, default: null, maxlength: 200, trim: true }
+      ,weeklySchedule: {
+        type: [{
+          _id: false,
+          dayOfWeek: { type: Number, min: 0, max: 6, required: true },
+          isOpen: { type: Boolean, default: true },
+          openTime: { type: String, default: '09:00', match: /^([01]\\d|2[0-3]):[0-5]\\d$/ },
+          closeTime: { type: String, default: '21:00', match: /^([01]\\d|2[0-3]):[0-5]\\d$/ }
+        }],
+        default: () => Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, isOpen: true, openTime: '09:00', closeTime: '21:00' }))
+      }
     },
     taxConfig: {
       gstin: {

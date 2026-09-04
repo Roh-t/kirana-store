@@ -6,7 +6,7 @@ import { OrderSuccessView } from './OrderSuccessView';
 import { CustomerOrderHistoryModal } from './CustomerOrderHistoryModal';
 import { VoiceOrderAssistant } from '../ai/VoiceOrderAssistant';
 import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
-import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight } from 'lucide-react';
+import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight, AlertTriangle, X } from 'lucide-react';
 
 export const PublicStorefront = ({ slug }) => {
   const [store, setStore] = useState(null);
@@ -22,6 +22,7 @@ export const PublicStorefront = ({ slug }) => {
   const [placedOrder, setPlacedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showClosedNotice, setShowClosedNotice] = useState(true);
 
   const { items, totalItemsCount, subTotal, updateQuantity, setQuantity } = useCart();
 
@@ -48,6 +49,10 @@ export const PublicStorefront = ({ slug }) => {
       loadStorefront();
     }
   }, [slug, selectedCategory, search]);
+
+  const nextOpeningLabel = store?.availability?.nextOpeningAt
+    ? new Date(store.availability.nextOpeningAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+    : 'the next scheduled opening';
 
   if (placedOrder) {
     return <OrderSuccessView order={placedOrder} onBackToStore={() => setPlacedOrder(null)} />;
@@ -80,6 +85,25 @@ export const PublicStorefront = ({ slug }) => {
 
   return (
     <div className="min-h-screen bg-gray-100/70 pb-28">
+      {!store?.availability?.isOpen && (
+        <div className="max-w-md mx-auto px-3.5 sm:px-4 pt-3">
+          <div className="bg-amber-50 border border-amber-300 text-amber-950 rounded-2xl p-3 flex gap-2 items-start">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-700" />
+            <p className="text-xs font-semibold">Shop is currently closed. You can still order; preparation starts {nextOpeningLabel}.</p>
+          </div>
+        </div>
+      )}
+      {!store?.availability?.isOpen && showClosedNotice && (
+        <div className="fixed inset-0 z-60 bg-black/55 flex items-center justify-center p-5">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button onClick={() => setShowClosedNotice(false)} aria-label="Close notice" className="absolute right-4 top-4 p-1 text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4"><AlertTriangle className="w-6 h-6" /></div>
+            <h2 className="text-xl font-black text-gray-900">Shop is closed right now</h2>
+            <p className="text-sm text-gray-600 mt-2">Your order is welcome and will be prepared when the shop opens {nextOpeningLabel}.</p>
+            <button onClick={() => setShowClosedNotice(false)} className="mt-5 w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-extrabold">Continue shopping</button>
+          </div>
+        </div>
+      )}
       {/* Mobile Header Banner */}
       <header className="bg-white border-b border-gray-200/80 sticky top-0 z-30 shadow-xs">
         <div className="max-w-md mx-auto p-3.5 sm:p-4">

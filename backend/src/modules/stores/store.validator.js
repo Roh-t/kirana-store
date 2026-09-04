@@ -45,7 +45,7 @@ export class StoreValidator {
     }
 
     if (data.businessConfig) {
-      const { preparationMinutes, bufferMinutes, workerCount } = data.businessConfig;
+      const { preparationMinutes, bufferMinutes, workerCount, isAcceptingOrders, weeklySchedule } = data.businessConfig;
       const errors = [];
       if (preparationMinutes !== undefined && (!Number.isInteger(Number(preparationMinutes)) || Number(preparationMinutes) < 1)) {
         errors.push({ field: 'businessConfig.preparationMinutes', message: 'Preparation time must be at least 1 minute' });
@@ -55,6 +55,20 @@ export class StoreValidator {
       }
       if (workerCount !== undefined && (!Number.isInteger(Number(workerCount)) || Number(workerCount) < 1)) {
         errors.push({ field: 'businessConfig.workerCount', message: 'Worker count must be at least 1' });
+      }
+      if (isAcceptingOrders !== undefined && typeof isAcceptingOrders !== 'boolean') {
+        errors.push({ field: 'businessConfig.isAcceptingOrders', message: 'Order availability must be true or false' });
+      }
+      if (weeklySchedule !== undefined && (!Array.isArray(weeklySchedule) || weeklySchedule.length !== 7)) {
+        errors.push({ field: 'businessConfig.weeklySchedule', message: 'A schedule for all 7 days is required' });
+      }
+      if (Array.isArray(weeklySchedule)) {
+        weeklySchedule.forEach((entry, index) => {
+          if (!Number.isInteger(Number(entry.dayOfWeek)) || Number(entry.dayOfWeek) < 0 || Number(entry.dayOfWeek) > 6 ||
+            typeof entry.isOpen !== 'boolean' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.openTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.closeTime)) {
+            errors.push({ field: `businessConfig.weeklySchedule[${index}]`, message: 'Invalid day or time' });
+          }
+        });
       }
       if (errors.length > 0) throw ApiError.badRequest('Validation failed', errors);
 

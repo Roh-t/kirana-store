@@ -14,7 +14,7 @@ router.use(authenticate);
 router.post('/', StoreController.createStore);
 router.get('/mine', StoreController.getMyStores);
 router.get('/:id', StoreController.getStoreById);
-router.patch('/:id', StoreController.updateStore);
+router.patch('/:id', tenantContext, StoreController.updateStore);
 
 // Staff Sub-Routes
 router.get('/:id/staff', tenantContext, StaffController.getStaff);

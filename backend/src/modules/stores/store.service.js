@@ -142,11 +142,12 @@ export class StoreService {
     return store;
   }
 
-  static async updateStore(storeId, updateData) {
+  static async updateStore(storeId, userId, updateData) {
     const store = await Store.findById(storeId);
     if (!store) {
       throw ApiError.notFound('Store not found');
     }
+    if (store.ownerId.toString() !== userId.toString()) throw ApiError.forbidden('Only the store owner can change store availability');
 
     if (updateData.name) store.name = updateData.name;
     if (updateData.phone) store.phone = updateData.phone;

@@ -7,6 +7,7 @@ import { CustomerService } from '../customers/customer.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { AuditService } from '../auditLogs/audit.service.js';
 import { ApiError } from '../../utils/apiError.js';
+import { getStoreAvailability } from '../stores/storeHours.util.js';
 
 export class OrderService {
   static async generateOrderNumber(storeId) {
@@ -21,10 +22,6 @@ export class OrderService {
     const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'ACTIVE' });
     if (!store) {
       throw ApiError.notFound('Kirana store not found or currently offline');
-    }
-
-    if (!store.businessConfig.isAcceptingOrders) {
-      throw ApiError.badRequest('This store is currently not accepting new orders.');
     }
 
     const customer = await CustomerService.findOrCreateCustomer(
@@ -87,7 +84,10 @@ export class OrderService {
     const bufferMinutes = store.businessConfig.bufferMinutes || 0;
     const workerCount = store.businessConfig.workerCount || 1;
     const queuePosition = Math.floor(activeQueueCount / workerCount) + 1;
-    const estimatedReadyAt = new Date(Date.now() + queuePosition * (preparationMinutes + bufferMinutes) * 60000);
+    const availability = getStoreAvailability(store);
+    const preparationStart = availability.nextOpeningAt || new Date();
+    const effectivePreparationMinutes = availability.isOpen ? preparationMinutes : Math.max(preparationMinutes, 15);
+    const estimatedReadyAt = new Date(preparationStart.getTime() + queuePosition * (effectivePreparationMinutes + bufferMinutes) * 60000);
 
     const order = await Order.create({
       storeId: store._id,

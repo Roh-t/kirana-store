@@ -5,6 +5,7 @@ import { Inventory } from '../inventory/inventory.model.js';
 import { Order } from '../orders/order.model.js';
 import { Customer } from '../customers/customer.model.js';
 import { ApiError } from '../../utils/apiError.js';
+import { getStoreAvailability } from '../stores/storeHours.util.js';
 
 export class PublicService {
   static async getPublicStore(slug) {
@@ -16,7 +17,7 @@ export class PublicService {
       throw ApiError.notFound('Kirana store not found or currently offline');
     }
 
-    return store;
+    return { ...store.toObject(), availability: getStoreAvailability(store) };
   }
 
   static async getPublicCategories(slug) {
