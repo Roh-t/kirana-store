@@ -31,7 +31,9 @@ import {
   Users,
   TrendingUp,
   Settings,
-  ArrowUpRight
+  ArrowUpRight,
+  Bell,
+  Sprout
 } from 'lucide-react';
 
 function DashboardView() {
@@ -67,34 +69,40 @@ function DashboardView() {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
         <p className="text-xs text-gray-500 mt-2">Loading KiranaFlow workspace...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-4xl flex flex-col items-center pb-20 sm:pb-6">
+    <div className="w-full max-w-4xl flex flex-col items-center pb-24 sm:pb-8">
       {/* Top Navbar */}
-      <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-[20px] p-2 mb-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
-        <div className="flex items-center gap-2">
-          <span className="text-xl text-green-600 leading-none sm:hidden">◢</span>
-          <h1 className="text-[1.25rem] sm:text-[1.9rem] font-black leading-none tracking-[-0.06em] text-gray-900 sm:text-green-700">KiranaFlow</h1>
-          <span className="hidden sm:inline text-xs text-gray-400">Simple Store Management</span>
+      <header className="w-full flex items-center justify-between py-2 px-1 mb-3">
+        {/* Brand Section */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-xs">
+            <Sprout className="w-5 h-5 fill-white" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none">
+              Kirana<span className="text-emerald-700">Flow</span>
+            </h1>
+            <p className="text-[11px] font-semibold text-gray-500 mt-0.5">Simple Store Management</p>
+          </div>
         </div>
 
+        {/* Action Controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
               setIsCreatingNewBranch(false);
               setActiveTab('STORE');
             }}
-            className={`inline-flex items-center gap-2 rounded-xl px-2.5 py-2 sm:px-3 text-xs sm:text-sm font-extrabold transition ${
-              activeTab === 'STORE' ? 'bg-green-600 text-white shadow-sm' : 'bg-green-50 text-green-700 border border-green-200'
-            }`}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-black shadow-xs transition active:scale-95"
           >
-            <StoreIcon className="w-4 h-4" />
-            Store
+            <StoreIcon className="w-3.5 h-3.5" />
+            <span>Store</span>
           </button>
 
           <button
@@ -102,11 +110,20 @@ function DashboardView() {
               setIsCreatingNewBranch(false);
               setActiveTab('STORE');
             }}
-            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            className="w-9 h-9 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-800 shadow-xs hover:bg-gray-50 transition active:scale-95"
             title="Open store workspace"
             aria-label="Open store workspace"
           >
             <ArrowUpRight className="w-4 h-4" />
+          </button>
+
+          <button
+            className="w-9 h-9 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-800 shadow-xs relative hover:bg-gray-50 transition active:scale-95"
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 border border-white" />
           </button>
 
           {isSuperAdmin && (
@@ -126,13 +143,13 @@ function DashboardView() {
 
           <button
             onClick={logout}
-            className="p-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition"
+            className="p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition"
             title="Logout Session"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </header>
 
       {activeTab === 'SUPER_ADMIN' && isSuperAdmin ? (
         <SuperAdminDashboard />
@@ -146,12 +163,12 @@ function DashboardView() {
         />
       ) : (
         <div className="w-full space-y-4">
-          {/* Segmented Navigation Tabs */}
+          {/* Segmented Desktop Navigation Tabs */}
           <div className="hidden sm:flex gap-1.5 overflow-x-auto no-scrollbar bg-white p-2 rounded-2xl border border-gray-200 shadow-2xs">
             <button
               onClick={() => setStoreModuleTab('HOME')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'HOME' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'HOME' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -161,7 +178,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('QUEUE')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'QUEUE' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'QUEUE' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <ShoppingBag className="w-4 h-4" />
@@ -171,7 +188,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('CATALOG')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'CATALOG' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'CATALOG' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Package className="w-4 h-4" />
@@ -181,7 +198,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('INVENTORY')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'INVENTORY' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'INVENTORY' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Warehouse className="w-4 h-4" />
@@ -191,7 +208,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('CUSTOMERS')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'CUSTOMERS' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'CUSTOMERS' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Users className="w-4 h-4" />
@@ -201,7 +218,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('ANALYTICS')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'ANALYTICS' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'ANALYTICS' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <TrendingUp className="w-4 h-4" />
@@ -211,7 +228,7 @@ function DashboardView() {
             <button
               onClick={() => setStoreModuleTab('SETTINGS')}
               className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                storeModuleTab === 'SETTINGS' ? 'bg-green-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
+                storeModuleTab === 'SETTINGS' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -261,68 +278,68 @@ function DashboardView() {
             </div>
           )}
 
-          {/* Fixed Mobile Bottom Bar */}
-          <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1.5 z-40 flex items-center justify-around shadow-xl">
+          {/* Floating Mobile Bottom Bar */}
+          <nav className="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white/95 backdrop-blur-md border border-gray-100 rounded-3xl px-3 py-2 z-40 flex items-center justify-between shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
             <button
               onClick={() => setStoreModuleTab('HOME')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'HOME' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition ${
+                storeModuleTab === 'HOME' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Home</span>
             </button>
 
             <button
               onClick={() => setStoreModuleTab('QUEUE')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'QUEUE' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition ${
+                storeModuleTab === 'QUEUE' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Orders</span>
             </button>
 
             <button
               onClick={() => setStoreModuleTab('CATALOG')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'CATALOG' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition ${
+                storeModuleTab === 'CATALOG' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <Package className="w-5 h-5" />
+              <Package className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Catalog</span>
             </button>
 
             <button
               onClick={() => setStoreModuleTab('INVENTORY')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'INVENTORY' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition ${
+                storeModuleTab === 'INVENTORY' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <Warehouse className="w-5 h-5" />
+              <Warehouse className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Stock</span>
             </button>
 
             <button
               onClick={() => setStoreModuleTab('CUSTOMERS')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'CUSTOMERS' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition ${
+                storeModuleTab === 'CUSTOMERS' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Udhar</span>
             </button>
 
             <button
               onClick={() => setStoreModuleTab('ANALYTICS')}
-              className={`flex flex-col items-center py-1 px-2 rounded-xl transition ${
-                storeModuleTab === 'ANALYTICS' ? 'text-green-700 font-black' : 'text-gray-400 font-medium'
+              className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition ${
+                storeModuleTab === 'ANALYTICS' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
-              <TrendingUp className="w-5 h-5" />
+              <TrendingUp className="w-4 h-4" />
               <span className="text-[10px] mt-0.5">Reports</span>
             </button>
-          </div>
+          </nav>
         </div>
       )}
     </div>
@@ -348,14 +365,14 @@ function MainApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50/60">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-3 sm:p-4">
+    <div className="min-h-screen bg-[#f8fafc]/90 flex flex-col items-center justify-start p-3 sm:p-4">
       <main className="w-full max-w-4xl flex flex-col items-center gap-4">
         {isAuthenticated ? (
           <DashboardView />
