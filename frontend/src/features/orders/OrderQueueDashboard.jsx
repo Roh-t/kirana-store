@@ -105,33 +105,33 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const fetchQueue = async (isManual = false) => {
     try {
       if (isManual) setLoading(true);
-      const res = await orderService.getOrderQueue(storeId, { status: selectedStatus });
-      setOrders(res.data);
-      const responseSummary = res.meta?.statusSummary || res.data?.meta?.statusSummary;
-      if (responseSummary) {
-        const summary = responseSummary;
+      const [res, summaryRes] = await Promise.all([
+        orderService.getOrderQueue(storeId, { status: selectedStatus }),
+        selectedStatus === 'ALL' ? Promise.resolve(null) : orderService.getOrderQueue(storeId, { status: 'ALL' })
+      ]);
+      const queueOrders = Array.isArray(res.data) ? res.data : [];
+      const summaryOrders = Array.isArray(summaryRes?.data) ? summaryRes.data : queueOrders;
+      setOrders(queueOrders);
+
+      const responseSummary = summaryRes?.meta?.statusSummary || summaryRes?.data?.meta?.statusSummary
+        || res.meta?.statusSummary || res.data?.meta?.statusSummary;
+      const returnedCounts = summaryOrders.reduce((counts, order) => {
+        if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
+        return counts;
+      }, {});
+      const responseTotal = responseSummary
+        ? Object.values(responseSummary).reduce((total, count) => total + Number(count || 0), 0)
+        : 0;
+      const summary = responseTotal > 0 || summaryOrders.length === 0
+        ? responseSummary
+        : returnedCounts;
+
+      if (summary) {
         setStatusSummary(summary);
         if (summary.PENDING > prevPendingCount.current && prevPendingCount.current >= 0) {
           playChimeSound();
         }
         prevPendingCount.current = summary.PENDING;
-      } else if (Array.isArray(res.data)) {
-        setStatusSummary((currentSummary) => {
-          const fallbackSummary = { ...currentSummary };
-          const returnedCounts = res.data.reduce((counts, order) => {
-            if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
-            return counts;
-          }, {});
-
-          if (selectedStatus === 'ALL') {
-            Object.keys(fallbackSummary).forEach((status) => {
-              fallbackSummary[status] = returnedCounts[status] || 0;
-            });
-          } else {
-            fallbackSummary[selectedStatus] = returnedCounts[selectedStatus] || 0;
-          }
-          return fallbackSummary;
-        });
       }
     } catch (err) {
       console.error('Failed to load live order queue', err);
