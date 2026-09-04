@@ -78,7 +78,9 @@ function DashboardView() {
       {/* Top Navbar */}
       <div className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-[20px] p-2 mb-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2">
-          <h1 className="text-[1.55rem] sm:text-[1.9rem] font-black leading-none tracking-[-0.06em] text-green-700">KiranaFlow</h1>
+          <span className="text-xl text-green-600 leading-none sm:hidden">◢</span>
+          <h1 className="text-[1.25rem] sm:text-[1.9rem] font-black leading-none tracking-[-0.06em] text-gray-900 sm:text-green-700">KiranaFlow</h1>
+          <span className="hidden sm:inline text-xs text-gray-400">Simple Store Management</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -87,7 +89,7 @@ function DashboardView() {
               setIsCreatingNewBranch(false);
               setActiveTab('STORE');
             }}
-            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition ${
+            className={`inline-flex items-center gap-2 rounded-xl px-2.5 py-2 sm:px-3 text-xs sm:text-sm font-extrabold transition ${
               activeTab === 'STORE' ? 'bg-green-600 text-white shadow-sm' : 'bg-green-50 text-green-700 border border-green-200'
             }`}
           >

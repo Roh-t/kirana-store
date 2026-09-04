@@ -13,9 +13,9 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-white via-green-50/30 to-emerald-50/50 border border-green-200/80 rounded-[20px] p-2.5 sm:p-3.5 shadow-[0_8px_22px_rgba(16,185,129,0.06)] mb-3">
+    <div className="w-full bg-transparent sm:bg-gradient-to-br sm:from-white sm:via-green-50/30 sm:to-emerald-50/50 border-0 sm:border sm:border-green-200/80 rounded-none sm:rounded-[20px] p-0 sm:p-3.5 shadow-none sm:shadow-[0_8px_22px_rgba(16,185,129,0.06)] mb-3">
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center justify-between gap-2.5 bg-gradient-to-br from-white via-green-50/30 to-emerald-50/50 border border-green-200/80 rounded-[20px] p-2.5 shadow-[0_8px_22px_rgba(16,185,129,0.06)] sm:bg-transparent sm:border-0 sm:rounded-none sm:p-0 sm:shadow-none">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-md shrink-0 border-2 border-white">
               {store?.name?.charAt(0) || 'K'}
@@ -41,7 +41,7 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white border border-gray-200 rounded-[20px] p-2 shadow-[0_6px_18px_rgba(15,23,42,0.04)] sm:bg-transparent sm:border-0 sm:rounded-none sm:p-0 sm:shadow-none">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <StoreSwitcherDropdown
               stores={stores}
@@ -52,11 +52,11 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
           </div>
 
           <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 via-white to-green-50 p-1 rounded-xl border border-emerald-200/80 shadow-[0_4px_12px_rgba(16,185,129,0.06)] w-full sm:w-auto">
-            <span className="inline-flex items-center rounded-lg bg-emerald-600/10 text-emerald-700 px-1.5 py-1 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.12em] shrink-0">
+            <span className="hidden sm:inline-flex items-center rounded-lg bg-emerald-600/10 text-emerald-700 px-1.5 py-1 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.12em] shrink-0">
               Public
             </span>
 
-            <span className="min-w-0 flex-1 text-[10px] sm:text-xs font-mono text-gray-700 truncate bg-white/70 border border-emerald-100 rounded-lg px-1.5 py-1">
+            <span className="min-w-0 flex-1 text-[10px] sm:text-xs font-mono text-gray-700 truncate bg-white/70 border border-emerald-100 rounded-lg px-1.5 py-1 sm:block hidden">
               /s/{store?.slug}
             </span>
 
@@ -76,7 +76,7 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
               title="Open Customer Storefront"
             >
               <ExternalLink className="w-3 h-3" />
-              <span className="hidden sm:inline">Open</span>
+              <span>Manage Store</span>
             </a>
           </div>
         </div>

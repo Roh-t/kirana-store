@@ -105,8 +105,8 @@ export const SubscriptionBanner = ({ storeId }) => {
   return (
     <>
       <div className="w-full rounded-[20px] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-green-50 p-1.5 sm:p-2 shadow-[0_8px_20px_rgba(16,185,129,0.08)] mb-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
-          <div className="rounded-[16px] bg-gradient-to-br from-emerald-100 to-emerald-50 border border-emerald-200 px-2 py-2.5 flex items-center gap-2 text-left">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+          <div className="rounded-[16px] bg-gradient-to-br from-emerald-100 to-emerald-50 border border-emerald-200 px-2 py-2.5 flex items-center gap-2 text-left col-span-1 sm:col-span-1">
             <div className="w-8 h-8 rounded-lg bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-sm">
               <Zap className="w-3.5 h-3.5" />
             </div>
@@ -116,7 +116,7 @@ export const SubscriptionBanner = ({ storeId }) => {
             </div>
           </div>
 
-          <div className="rounded-[16px] bg-white border border-emerald-100 px-2 py-2.5">
+          <div className="rounded-[16px] bg-white border border-emerald-100 px-2 py-2.5 order-3 sm:order-none">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200">
                 <Package className="w-3.5 h-3.5" />
@@ -136,7 +136,7 @@ export const SubscriptionBanner = ({ storeId }) => {
             </div>
           </div>
 
-          <div className="rounded-[16px] bg-white border border-emerald-100 px-2 py-2.5">
+          <div className="rounded-[16px] bg-white border border-emerald-100 px-2 py-2.5 order-4 sm:order-none">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200">
                 <Users className="w-3.5 h-3.5" />
@@ -155,11 +155,10 @@ export const SubscriptionBanner = ({ storeId }) => {
               />
             </div>
           </div>
-        </div>
 
         <button
           onClick={() => setShowPlanModal(true)}
-          className="mt-1.5 w-full flex items-center justify-between rounded-[16px] bg-gradient-to-r from-orange-400 via-amber-500 to-orange-500 px-2.5 py-2 shadow-[0_8px_20px_rgba(251,146,60,0.25)] text-white font-black text-left"
+          className="mt-1.5 w-full flex items-center justify-between rounded-[16px] bg-gradient-to-r from-orange-400 via-amber-500 to-orange-500 px-2.5 py-2 shadow-[0_8px_20px_rgba(251,146,60,0.25)] text-white font-black text-left order-2 sm:order-none sm:col-span-3"
         >
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center">
@@ -174,6 +173,7 @@ export const SubscriptionBanner = ({ storeId }) => {
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
         </button>
+      </div>
       </div>
 
       {/* Plan Selection Modal */}
