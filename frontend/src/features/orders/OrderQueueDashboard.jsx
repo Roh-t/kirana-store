@@ -123,18 +123,20 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       };
       const [res, summaryRes] = await Promise.all([
         orderService.getOrderQueue(storeId, queueParams),
-        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 1 })
+        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 100 })
       ]);
       const queueOrders = Array.isArray(res.data) ? res.data : [];
       setOrders(queueOrders);
       setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: queueOrders.length });
 
       const responseSummary = summaryRes.meta?.statusSummary || res.meta?.statusSummary;
-      const fallbackSummary = queueOrders.reduce((counts, order) => {
+      const summaryOrders = Array.isArray(summaryRes.data) ? summaryRes.data : [];
+      const fallbackSummary = summaryOrders.reduce((counts, order) => {
         if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
         return counts;
       }, {});
-      const summary = responseSummary || fallbackSummary;
+      const hasPositiveSummary = responseSummary && Object.values(responseSummary).some((count) => Number(count) > 0);
+      const summary = hasPositiveSummary ? responseSummary : fallbackSummary;
 
       if (summary) {
         setStatusSummary(summary);
