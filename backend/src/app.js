@@ -28,6 +28,7 @@ import aiRouter from './modules/ai/aiOrder.route.js';
 import razorpayRouter from './modules/payments/razorpay.route.js';
 import publicRouter from './modules/public/public.route.js';
 import imageLibraryRouter from './modules/imageLibrary/imageLibrary.route.js';
+import masterCatalogRouter from './modules/masterCatalog/masterCatalog.route.js';
 
 const app = express();
 
@@ -69,6 +70,7 @@ app.use('/api/v1/notifications', notificationRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/image-library', imageLibraryRouter);
+app.use('/api/v1/master-catalog', masterCatalogRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
 app.use('/api/v1/audit-logs', auditRouter);
 app.use('/api/v1/whatsapp', whatsappRouter);

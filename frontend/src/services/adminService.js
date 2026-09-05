@@ -17,6 +17,10 @@ export const adminService = {
     return apiClient.get('/image-library', { params: { search } });
   },
 
+  async searchMasterProducts(search = '') {
+    return apiClient.get('/master-catalog/products', { params: { search, limit: 8 } });
+  },
+
   async checkImageLibraryConnection() {
     return apiClient.get('/image-library/connection');
   },

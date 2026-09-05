@@ -14,8 +14,8 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState(null);
-  const [libraryImages, setLibraryImages] = useState([]);
-  const [imageSearch, setImageSearch] = useState('');
+  const [masterSuggestions, setMasterSuggestions] = useState([]);
+  const [masterSearch, setMasterSearch] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,8 +39,12 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       ]);
       setProducts(prodRes.data);
       setCategories(catRes.data);
-      const imageRes = await adminService.getImageLibrary(imageSearch);
-      setLibraryImages(imageRes.data || []);
+      if (masterSearch.trim().length >= 2) {
+        const masterRes = await adminService.searchMasterProducts(masterSearch);
+        setMasterSuggestions(masterRes.data || []);
+      } else {
+        setMasterSuggestions([]);
+      }
     } catch (err) {
       console.error('Failed to load catalog data', err);
     } finally {
@@ -52,7 +56,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
     if (storeId) {
       fetchData();
     }
-  }, [storeId, search, selectedCategory, catalogVersion, imageSearch]);
+  }, [storeId, search, selectedCategory, catalogVersion, masterSearch]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -353,28 +357,44 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Product Image from Shared Database (Optional)</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Search Shared Product Catalog</label>
                 <input
                   type="text"
-                  value={imageSearch}
-                  onChange={(e) => setImageSearch(e.target.value)}
-                  placeholder="Search image label, e.g. atta"
+                  value={masterSearch}
+                  onChange={(e) => setMasterSearch(e.target.value)}
+                  placeholder="Search product or category, e.g. atta"
                   className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
                 />
-                {imageSearch && libraryImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {libraryImages.slice(0, 6).map((image) => (
+                {masterSearch && masterSuggestions.length > 0 && (
+                  <div className="mt-2 space-y-1.5 rounded-xl border border-gray-200 bg-gray-50 p-2">
+                    {masterSuggestions.map((suggestion) => (
                       <button
                         type="button"
-                        key={image._id}
+                        key={suggestion._id}
                         onClick={() => {
-                          setFormData({ ...formData, imageUrl: image.imageUrl });
-                          setImageSearch(image.label);
+                          setFormData({
+                            ...formData,
+                            name: suggestion.name,
+                            regionalName: suggestion.alias || '',
+                            categoryId: categories.find((category) => category.name === suggestion.categoryName)?._id || formData.categoryId,
+                            mrp: suggestion.mrp,
+                            sellingPrice: suggestion.sellingPrice,
+                            imageUrl: suggestion.imageUrl || ''
+                          });
+                          setMasterSearch(suggestion.name);
+                          setMasterSuggestions([]);
                         }}
-                        className={`text-left border rounded-xl overflow-hidden ${formData.imageUrl === image.imageUrl ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}
+                        className="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-white p-1.5 text-left hover:border-green-400"
                       >
-                        <img src={image.imageUrl} alt={image.label} className="w-full aspect-square object-cover" />
-                        <span className="block px-1.5 py-1 text-[10px] font-bold truncate">{image.label}</span>
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                          {suggestion.imageUrl && <img src={suggestion.imageUrl} alt="" className="h-full w-full object-cover" />}
+                        </div>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[11px] font-bold text-gray-900">{suggestion.name}</span>
+                          <span className="block truncate text-[10px] text-gray-500">
+                            {suggestion.categoryName} · ₹{suggestion.sellingPrice}
+                          </span>
+                        </span>
                       </button>
                     ))}
                   </div>
