@@ -329,9 +329,9 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
               aria-label="Filter orders by ready time"
             >
               <option value="ALL">Any time</option>
-              <option value="10">Next 10 minutes</option>
-              <option value="20">Next 20 minutes</option>
-              <option value="CUSTOM">Custom minutes</option>
+              <option value="10">Due within 10 minutes</option>
+              <option value="20">Due within 20 minutes</option>
+              <option value="CUSTOM">Due within custom minutes</option>
             </select>
             {readyWindow === 'CUSTOM' && (
               <input

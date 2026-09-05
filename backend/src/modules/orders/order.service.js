@@ -213,7 +213,6 @@ export class OrderService {
     if (Number.isFinite(minutes) && minutes > 0) {
       const now = new Date();
       query.estimatedReadyAt = {
-        $gte: now,
         $lte: new Date(now.getTime() + minutes * 60000)
       };
     }
