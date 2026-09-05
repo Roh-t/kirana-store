@@ -115,18 +115,26 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
     try {
       if (isManual) setLoading(true);
       const readyWithinMinutes = readyWindow === 'CUSTOM' ? customReadyMinutes : readyWindow;
-      const res = await orderService.getOrderQueue(storeId, {
+      const queueParams = {
         status: selectedStatus,
         page: currentPage,
         limit: 10,
         ...(readyWithinMinutes && readyWithinMinutes !== 'ALL' ? { readyWithinMinutes } : {})
-      });
+      };
+      const [res, summaryRes] = await Promise.all([
+        orderService.getOrderQueue(storeId, queueParams),
+        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 1 })
+      ]);
       const queueOrders = Array.isArray(res.data) ? res.data : [];
       setOrders(queueOrders);
       setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: queueOrders.length });
 
-      const responseSummary = res.meta?.statusSummary || {};
-      const summary = responseSummary;
+      const responseSummary = summaryRes.meta?.statusSummary || res.meta?.statusSummary;
+      const fallbackSummary = queueOrders.reduce((counts, order) => {
+        if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
+        return counts;
+      }, {});
+      const summary = responseSummary || fallbackSummary;
 
       if (summary) {
         setStatusSummary(summary);
