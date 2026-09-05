@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate);
 router.use(tenantContext);
 
+router.post('/bulk-import', ProductController.importCatalog);
 router.post('/', ProductController.createProduct);
 router.get('/', ProductController.getProducts);
 router.get('/:id', ProductController.getProductById);

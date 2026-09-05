@@ -1,6 +1,12 @@
 import apiClient from './apiClient';
 
 export const productService = {
+  async importCatalog(storeId, data) {
+    return apiClient.post('/products/bulk-import', data, {
+      headers: { 'X-Store-Id': storeId }
+    });
+  },
+
   async getProducts(storeId, params = {}) {
     return apiClient.get('/products', {
       headers: { 'X-Store-Id': storeId },

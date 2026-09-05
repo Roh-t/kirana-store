@@ -1,10 +1,107 @@
+import mongoose from 'mongoose';
 import { Product } from './product.model.js';
 import { Category } from '../categories/category.model.js';
+import { CategoryService } from '../categories/category.service.js';
+import { ProductValidator } from './product.validator.js';
 import { Inventory } from '../inventory/inventory.model.js';
 import { SubscriptionService } from '../subscriptions/subscription.service.js';
 import { ApiError } from '../../utils/apiError.js';
 
 export class ProductService {
+  static async importCatalog(storeId, userId, payload) {
+    const categoryRows = Array.isArray(payload?.categories) ? payload.categories : [];
+    const productRows = Array.isArray(payload?.products) ? payload.products : [];
+    if (categoryRows.length === 0 && productRows.length === 0) {
+      throw ApiError.badRequest('The import file has no category or product rows');
+    }
+
+    const existingCategories = await Category.find({ storeId, isDeleted: false });
+    const categoryByName = new Map(existingCategories.map((category) => [category.name.trim().toLowerCase(), category]));
+    const categoriesToCreate = [];
+    const seenCategoryNames = new Set();
+
+    for (const [index, row] of categoryRows.entries()) {
+      const name = String(row.name || '').trim();
+      if (name.length < 2 || name.length > 50) {
+        throw ApiError.badRequest(`Category row ${index + 2}: name must be between 2 and 50 characters`);
+      }
+      const key = name.toLowerCase();
+      if (categoryByName.has(key) || seenCategoryNames.has(key)) continue;
+      seenCategoryNames.add(key);
+      categoriesToCreate.push({
+        _id: new mongoose.Types.ObjectId(),
+        storeId,
+        name,
+        slug: CategoryService.generateCategorySlug(name),
+        description: row.description ? String(row.description).trim() : null,
+        sortOrder: Number(row.sortOrder) || existingCategories.length + categoriesToCreate.length,
+        isActive: true,
+        isDeleted: false
+      });
+    }
+
+    categoriesToCreate.forEach((category) => categoryByName.set(category.name.trim().toLowerCase(), category));
+
+    const validatedProducts = productRows.map((row, index) => {
+      const categoryName = String(row.categoryName || row.category || '').trim();
+      const category = categoryByName.get(categoryName.toLowerCase());
+      if (!category) {
+        throw ApiError.badRequest(`Product row ${index + 2}: category "${categoryName}" was not found`);
+      }
+      try {
+        return ProductValidator.validateCreateProduct({ ...row, categoryId: category._id });
+      } catch (error) {
+        throw ApiError.badRequest(`Product row ${index + 2}: ${error.message}`, error.errors);
+      }
+    });
+
+    if (validatedProducts.length > 0) {
+      const { usage } = await SubscriptionService.getStoreSubscription(storeId);
+      if (usage.products.max !== -1 && usage.products.current + validatedProducts.length > usage.products.max) {
+        throw ApiError.forbidden(
+          `Import exceeds product limit (${usage.products.current + validatedProducts.length}/${usage.products.max}). Please upgrade your plan.`
+        );
+      }
+    }
+
+    const barcodes = validatedProducts.map((product) => product.barcode).filter(Boolean);
+    if (new Set(barcodes).size !== barcodes.length) {
+      throw ApiError.badRequest('Import contains duplicate barcodes');
+    }
+    if (barcodes.length > 0 && await Product.exists({ storeId, barcode: { $in: barcodes }, isDeleted: false })) {
+      throw ApiError.conflict('One or more imported barcodes already exist in this store');
+    }
+
+    if (categoriesToCreate.length > 0) {
+      await Category.insertMany(categoriesToCreate, { ordered: true });
+    }
+
+    const productsToCreate = validatedProducts.map((product) => ({
+      storeId,
+      ...product,
+      isActive: true,
+      isDeleted: false,
+      createdBy: userId,
+      updatedBy: userId
+    }));
+    const createdProducts = productsToCreate.length ? await Product.insertMany(productsToCreate, { ordered: true }) : [];
+    if (createdProducts.length > 0) {
+      await Inventory.insertMany(createdProducts.map((product) => ({
+        storeId,
+        productId: product._id,
+        stockQuantity: 0,
+        reservedQuantity: 0,
+        reorderPoint: 5,
+        trackInventory: true
+      })));
+    }
+
+    return {
+      categoriesCreated: categoriesToCreate.length,
+      productsCreated: createdProducts.length
+    };
+  }
+
   static async createProduct(storeId, userId, validatedData) {
     // ENFORCE SAAS PRODUCT LIMIT
     await SubscriptionService.enforceProductLimit(storeId);

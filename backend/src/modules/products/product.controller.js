@@ -3,6 +3,19 @@ import { ProductValidator } from './product.validator.js';
 import { ApiResponse } from '../../utils/apiResponse.js';
 
 export class ProductController {
+  static async importCatalog(req, res, next) {
+    try {
+      const result = await ProductService.importCatalog(req.storeId, req.user._id, req.body);
+      return ApiResponse.success(res, {
+        statusCode: 201,
+        message: 'Catalog imported successfully',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createProduct(req, res, next) {
     try {
       const validatedData = ProductValidator.validateCreateProduct(req.body);
