@@ -68,10 +68,7 @@ export const AuditLogViewer = ({ storeId }) => {
       setLoading(true);
       const res = await auditService.getAuditLogs(storeId);
       setLogs(res.data);
-
-      if (res.data.length > 0) {
-        setExpandedUserId(getAuditGroupKey(res.data[0]));
-      }
+      setExpandedUserId(null);
     } catch (err) {
       console.error('Failed to load audit logs', err);
     } finally {
