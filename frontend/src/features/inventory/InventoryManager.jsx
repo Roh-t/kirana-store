@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
-import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package } from 'lucide-react';
+import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -13,6 +13,9 @@ export const InventoryManager = ({ storeId }) => {
   const [error, setError] = useState(null);
   const [historyItem, setHistoryItem] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [stockFilter, setStockFilter] = useState('ALL');
+  const [stockLimit, setStockLimit] = useState('');
 
   const fetchInventory = async () => {
     try {
@@ -73,6 +76,19 @@ export const InventoryManager = ({ storeId }) => {
   };
 
   const lowStockCount = inventory.filter((inv) => inv.stockQuantity <= inv.reorderPoint).length;
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredInventory = inventory.filter((inv) => {
+    const product = inv.productId;
+    const matchesSearch = !normalizedSearch || [product?.name, product?.regionalName]
+      .filter(Boolean)
+      .some((name) => name.toLowerCase().includes(normalizedSearch));
+    const matchesStockFilter = stockFilter === 'ALL'
+      || (stockFilter === 'LOW' && inv.stockQuantity <= inv.reorderPoint)
+      || (stockFilter === 'OUT' && inv.stockQuantity <= 0)
+      || (stockFilter === 'BELOW' && stockLimit !== '' && inv.stockQuantity < Number(stockLimit));
+
+    return matchesSearch && matchesStockFilter;
+  });
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs space-y-3">
@@ -96,15 +112,60 @@ export const InventoryManager = ({ storeId }) => {
         )}
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-2">
+        <label className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search item name..."
+            className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-gray-50/60"
+          />
+        </label>
+
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <select
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value)}
+            className="flex-1 sm:w-48 px-2.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-white font-semibold text-gray-700"
+            aria-label="Filter stock levels"
+          >
+            <option value="ALL">All stock levels</option>
+            <option value="LOW">At or below reorder point</option>
+            <option value="OUT">Out of stock</option>
+            <option value="BELOW">Below a quantity</option>
+          </select>
+
+          {stockFilter === 'BELOW' && (
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={stockLimit}
+              onChange={(e) => setStockLimit(e.target.value)}
+              placeholder="Qty"
+              className="w-16 px-2.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-semibold"
+              aria-label="Stock quantity limit"
+            />
+          )}
+        </div>
+      </div>
+
       {loading ? (
         <div className="py-6 text-center text-xs text-gray-400 font-bold">Loading stock balances...</div>
       ) : inventory.length === 0 ? (
         <div className="py-6 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-4">
           <p className="text-xs text-gray-500 font-bold">No inventory records</p>
         </div>
+      ) : filteredInventory.length === 0 ? (
+        <div className="py-6 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-4">
+          <p className="text-xs text-gray-500 font-bold">No items match this search or filter</p>
+        </div>
       ) : (
         <div className="divide-y divide-gray-100">
-          {inventory.map((inv) => {
+          {filteredInventory.map((inv) => {
             const product = inv.productId;
             const isLow = inv.stockQuantity <= inv.reorderPoint;
 
