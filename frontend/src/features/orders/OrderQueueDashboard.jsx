@@ -115,7 +115,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       const res = await orderService.getOrderQueue(storeId, {
         status: selectedStatus,
         page: currentPage,
-        limit: 20,
+        limit: 10,
         ...(readyWithinMinutes && readyWithinMinutes !== 'ALL' ? { readyWithinMinutes } : {})
       });
       const queueOrders = Array.isArray(res.data) ? res.data : [];
@@ -259,7 +259,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1">
         {[
           { key: 'ALL', label: 'All', count: Object.values(statusSummary).reduce((a, b) => a + b, 0) },
           { key: 'PENDING', label: 'Incoming', count: statusSummary.PENDING || 0, badgeBg: 'bg-red-500 text-white' },
