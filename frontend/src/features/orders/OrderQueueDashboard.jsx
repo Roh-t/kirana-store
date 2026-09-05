@@ -26,7 +26,9 @@ import {
   FileText,
   CalendarRange
   , ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const dateKey = (value) => {
@@ -52,6 +54,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [customDate, setCustomDate] = useState('');
   const [readyWindow, setReadyWindow] = useState('ALL');
   const [customReadyMinutes, setCustomReadyMinutes] = useState('');
+  const [showReadyFilters, setShowReadyFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
   const [loading, setLoading] = useState(true);
@@ -283,40 +286,60 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50/70 p-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <span className="text-[11px] font-bold text-gray-600">Coming in</span>
-          <select
-            value={readyWindow}
-            onChange={(event) => changeReadyWindow(event.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-500 sm:flex-none"
-            aria-label="Filter orders by ready time"
-          >
-            <option value="ALL">Any time</option>
-            <option value="10">Next 10 minutes</option>
-            <option value="20">Next 20 minutes</option>
-            <option value="CUSTOM">Custom minutes</option>
-          </select>
-          {readyWindow === 'CUSTOM' && (
-            <input
-              type="number"
-              min="1"
-              max="1440"
-              value={customReadyMinutes}
-              onChange={(event) => {
-                setCustomReadyMinutes(event.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Minutes"
-              className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold outline-none focus:ring-2 focus:ring-green-500"
-              aria-label="Custom ready time in minutes"
-            />
-          )}
-        </div>
-        <span className="text-[10px] font-semibold text-gray-400 sm:text-right">
-          {pagination.totalRecords} order{pagination.totalRecords === 1 ? '' : 's'}
-        </span>
+      <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-2">
+        <button
+          type="button"
+          onClick={() => setShowReadyFilters((open) => !open)}
+          className="flex w-full items-center justify-between gap-2 text-left"
+          aria-expanded={showReadyFilters}
+        >
+          <span className="flex items-center gap-2 text-[11px] font-bold text-gray-600">
+            <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            Coming in
+            {readyWindow !== 'ALL' && (
+              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-extrabold text-green-700">
+                {readyWindow === 'CUSTOM' ? `${customReadyMinutes || '?'} min` : `${readyWindow} min`}
+              </span>
+            )}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-gray-400">
+              {pagination.totalRecords} order{pagination.totalRecords === 1 ? '' : 's'}
+            </span>
+            {showReadyFilters ? <ChevronUp className="w-3.5 h-3.5 text-gray-500" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-500" />}
+          </span>
+        </button>
+
+        {showReadyFilters && (
+          <div className="mt-2 flex flex-col gap-2 border-t border-gray-200 pt-2 sm:flex-row sm:items-center">
+            <select
+              value={readyWindow}
+              onChange={(event) => changeReadyWindow(event.target.value)}
+              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-500 sm:flex-none"
+              aria-label="Filter orders by ready time"
+            >
+              <option value="ALL">Any time</option>
+              <option value="10">Next 10 minutes</option>
+              <option value="20">Next 20 minutes</option>
+              <option value="CUSTOM">Custom minutes</option>
+            </select>
+            {readyWindow === 'CUSTOM' && (
+              <input
+                type="number"
+                min="1"
+                max="1440"
+                value={customReadyMinutes}
+                onChange={(event) => {
+                  setCustomReadyMinutes(event.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Minutes"
+                className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold outline-none focus:ring-2 focus:ring-green-500 sm:w-20"
+                aria-label="Custom ready time in minutes"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Order Cards */}
