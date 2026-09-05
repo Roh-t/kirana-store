@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "test": "vitest run",
     "create-super-admin": "node src/scripts/createSuperAdmin.js",
-    "assign-super-admin": "node src/scripts/assignSuperAdmin.js"
+    "assign-super-admin": "node src/scripts/assignSuperAdmin.js",
+    "import:master-catalog": "node src/scripts/importMasterCatalog.js"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +26,8 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.3",
-    "razorpay": "^2.9.8"
+    "razorpay": "^2.9.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
