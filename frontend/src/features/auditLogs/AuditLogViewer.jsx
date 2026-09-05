@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { auditService } from '../../services/auditService';
-import { ShieldCheck, User, Clock3, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldCheck, User, Clock3, Activity, ChevronDown, ChevronUp, CalendarDays, ArrowRight } from 'lucide-react';
 
 const formatOrderReference = (log) => {
   if (!log) return null;
@@ -12,6 +12,13 @@ const formatOrderReference = (log) => {
   if (log.entityType === 'Order' && log.entityId) return `Order #${String(log.entityId).slice(-6)}`;
 
   return null;
+};
+
+const getAuditGroupKey = (log) => {
+  const actorId = log.actorId?._id || log.actorId || 'system';
+  const createdAt = new Date(log.createdAt);
+  const dateKey = Number.isNaN(createdAt.getTime()) ? 'unknown-date' : createdAt.toISOString().slice(0, 10);
+  return `${dateKey}-${actorId}`;
 };
 
 export const AuditLogViewer = ({ storeId }) => {
@@ -26,17 +33,26 @@ export const AuditLogViewer = ({ storeId }) => {
       const actorPhone = log.actorId?.phone;
       const actorEmail = log.actorId?.email;
       const actorDetails = [actorPhone, actorEmail].filter(Boolean).join(' • ');
+      const createdAt = new Date(log.createdAt);
+      const dateKey = Number.isNaN(createdAt.getTime()) ? 'unknown-date' : createdAt.toISOString().slice(0, 10);
+      const dateLabel = Number.isNaN(createdAt.getTime())
+        ? 'Date unavailable'
+        : createdAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+      const groupKey = getAuditGroupKey(log);
 
-      if (!acc[actorId]) {
-        acc[actorId] = {
+      if (!acc[groupKey]) {
+        acc[groupKey] = {
           actorId,
           actorName,
           actorDetails,
+          dateKey,
+          dateLabel,
+          groupKey,
           actions: []
         };
       }
 
-      acc[actorId].actions.push(log);
+      acc[groupKey].actions.push(log);
       return acc;
     }, {});
 
@@ -54,8 +70,7 @@ export const AuditLogViewer = ({ storeId }) => {
       setLogs(res.data);
 
       if (res.data.length > 0) {
-        const firstActorId = res.data[0]?.actorId?._id || res.data[0]?.actorId || 'system';
-        setExpandedUserId(firstActorId);
+        setExpandedUserId(getAuditGroupKey(res.data[0]));
       }
     } catch (err) {
       console.error('Failed to load audit logs', err);
@@ -83,7 +98,7 @@ export const AuditLogViewer = ({ storeId }) => {
           </div>
         </div>
 
-        <div className="hidden items-center gap-2 rounded-full border border-[#eedaa3] bg-[#fffaf0] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-600 sm:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-[#eedaa3] bg-[#fffaf0] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-600 sm:flex">
           <Activity className="h-3.5 w-3.5 text-violet-600" />
           Live Monitor
         </div>
@@ -100,17 +115,17 @@ export const AuditLogViewer = ({ storeId }) => {
       ) : (
         <div className="space-y-3">
           {groupedLogs.map((group) => {
-            const isExpanded = expandedUserId === group.actorId;
+            const isExpanded = expandedUserId === group.groupKey;
             const uniqueOrderRefs = [...new Set(group.actions.map((action) => formatOrderReference(action)).filter(Boolean))];
 
             return (
               <div
-                key={group.actorId}
+                key={group.groupKey}
                 className="overflow-hidden rounded-2xl border border-[#f1dca0] bg-white/90 shadow-[0_10px_20px_rgba(120,98,30,0.04)]"
               >
                 <button
                   type="button"
-                  onClick={() => setExpandedUserId(isExpanded ? null : group.actorId)}
+                  onClick={() => setExpandedUserId(isExpanded ? null : group.groupKey)}
                   className="flex w-full flex-col gap-2 border-b border-[#f1dca0] bg-[linear-gradient(90deg,#fffaf0_0%,#ffffff_55%,#f5f0ff_100%)] px-3 py-3 text-left transition-colors hover:bg-[#f7f0ff] sm:flex-row sm:items-center sm:justify-between sm:px-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
@@ -126,7 +141,11 @@ export const AuditLogViewer = ({ storeId }) => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#eedaa3] bg-[#fffaf0] px-2 py-1 text-[9px] font-bold text-[#7a5d2b]">
+                      <CalendarDays className="h-3 w-3" />
+                      {group.dateLabel}
+                    </span>
                     <span className="inline-flex w-fit items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-700">
                       {group.actions.length} logs
                     </span>
@@ -161,6 +180,11 @@ export const AuditLogViewer = ({ storeId }) => {
                       {group.actions.map((log) => {
                         const orderRef = formatOrderReference(log);
                         const createdAt = new Date(log.createdAt);
+                        const dateText = createdAt.toLocaleDateString([], {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        });
                         const timeText = createdAt.toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit'
@@ -169,15 +193,24 @@ export const AuditLogViewer = ({ storeId }) => {
                         return (
                           <div
                             key={log._id}
-                            className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+                            className="relative flex gap-3 px-3 py-3.5 sm:px-4"
                           >
-                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                              <span className="inline-flex shrink-0 rounded-md border border-violet-200 bg-violet-50 px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-violet-700 sm:text-[10px]">
-                                {log.action}
-                              </span>
+                            <div className="relative flex w-5 shrink-0 justify-center">
+                              <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-violet-500 ring-4 ring-violet-50" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex shrink-0 rounded-md border border-violet-200 bg-violet-50 px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-violet-700 sm:text-[10px]">
+                                  {log.action}
+                                </span>
+                                <span className="text-[10px] font-medium text-stone-400">{dateText}</span>
+                              </div>
                               <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold tracking-[-0.02em] text-stone-800">
+                                <div className="mt-1 flex items-center gap-1 text-sm font-semibold tracking-[-0.02em] text-stone-800">
+                                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-violet-400" />
+                                  <span className="truncate">
                                   {orderRef || log.entityType}
+                                  </span>
                                 </div>
                                 {!orderRef && (
                                   <div className="text-[10px] text-stone-500">{log.entityType}</div>
@@ -185,7 +218,7 @@ export const AuditLogViewer = ({ storeId }) => {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#f3e4b2] bg-[#fffaf0] px-2 py-1 text-[10px] font-medium text-stone-500">
+                            <div className="flex h-fit items-center gap-1.5 whitespace-nowrap rounded-full border border-[#f3e4b2] bg-[#fffaf0] px-2 py-1 text-[10px] font-medium text-stone-500">
                               <Clock3 className="h-3 w-3 text-stone-400" />
                               {timeText}
                             </div>
