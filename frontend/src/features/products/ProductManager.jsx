@@ -117,6 +117,8 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
 
   const resetForm = () => {
     setEditingId(null);
+    setMasterSearch('');
+    setMasterSuggestions([]);
     setFormData({
       name: '',
       regionalName: '',
