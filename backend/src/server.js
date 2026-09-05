@@ -2,11 +2,26 @@ import app from './app.js';
 import { env } from './config/env.js';
 import { connectDatabase } from './config/database.js';
 import mongoose from 'mongoose';
+import { OrderService } from './modules/orders/order.service.js';
 
 let server;
 
 const startServer = async () => {
   await connectDatabase();
+
+  const sendOrderReminders = async () => {
+    try {
+      const remindedCount = await OrderService.sendUnattendedOrderReminders();
+      if (remindedCount > 0) {
+        console.log(`[ORDERS] Sent ${remindedCount} unattended order reminder(s).`);
+      }
+    } catch (err) {
+      console.error('[ORDERS] Failed to send unattended order reminders:', err.message);
+    }
+  };
+
+  await sendOrderReminders();
+  const reminderInterval = setInterval(sendOrderReminders, 5 * 60 * 1000);
 
   server = app.listen(env.port, () => {
     console.log(`====================================================`);
@@ -15,6 +30,8 @@ const startServer = async () => {
     console.log(`  🔗 API:  http://localhost:${env.port}/api/v1/health`);
     console.log(`====================================================`);
   });
+
+  server.on('close', () => clearInterval(reminderInterval));
 };
 
 const handleShutdown = (signal) => {

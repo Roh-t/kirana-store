@@ -58,6 +58,7 @@ const orderSchema = new mongoose.Schema(
     cancellationReason: { type: String, default: null },
     notes: { type: String, default: null, maxlength: 300 },
     estimatedReadyAt: { type: Date, default: null },
+    unattendedReminderSentAt: { type: Date, default: null },
     fulfilledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     completedAt: { type: Date, default: null }
   },
@@ -66,6 +67,7 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ storeId: 1, orderNumber: 1 }, { unique: true });
 orderSchema.index({ storeId: 1, orderStatus: 1, createdAt: -1 });
+orderSchema.index({ orderStatus: 1, createdAt: 1, unattendedReminderSentAt: 1 });
 orderSchema.index({ storeId: 1, customerId: 1, createdAt: -1 });
 
 export const Order = mongoose.model('Order', orderSchema);

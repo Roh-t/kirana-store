@@ -25,6 +25,8 @@ import {
   Trash2,
   FileText,
   CalendarRange
+  , ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const dateKey = (value) => {
@@ -48,6 +50,10 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState('ALL');
   const [customDate, setCustomDate] = useState('');
+  const [readyWindow, setReadyWindow] = useState('ALL');
+  const [customReadyMinutes, setCustomReadyMinutes] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [invoiceData, setInvoiceData] = useState(null);
@@ -105,26 +111,19 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const fetchQueue = async (isManual = false) => {
     try {
       if (isManual) setLoading(true);
-      const [res, summaryRes] = await Promise.all([
-        orderService.getOrderQueue(storeId, { status: selectedStatus }),
-        selectedStatus === 'ALL' ? Promise.resolve(null) : orderService.getOrderQueue(storeId, { status: 'ALL' })
-      ]);
+      const readyWithinMinutes = readyWindow === 'CUSTOM' ? customReadyMinutes : readyWindow;
+      const res = await orderService.getOrderQueue(storeId, {
+        status: selectedStatus,
+        page: currentPage,
+        limit: 20,
+        ...(readyWithinMinutes && readyWithinMinutes !== 'ALL' ? { readyWithinMinutes } : {})
+      });
       const queueOrders = Array.isArray(res.data) ? res.data : [];
-      const summaryOrders = Array.isArray(summaryRes?.data) ? summaryRes.data : queueOrders;
       setOrders(queueOrders);
+      setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: queueOrders.length });
 
-      const responseSummary = summaryRes?.meta?.statusSummary || summaryRes?.data?.meta?.statusSummary
-        || res.meta?.statusSummary || res.data?.meta?.statusSummary;
-      const returnedCounts = summaryOrders.reduce((counts, order) => {
-        if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
-        return counts;
-      }, {});
-      const responseTotal = responseSummary
-        ? Object.values(responseSummary).reduce((total, count) => total + Number(count || 0), 0)
-        : 0;
-      const summary = responseTotal > 0 || summaryOrders.length === 0
-        ? responseSummary
-        : returnedCounts;
+      const responseSummary = res.meta?.statusSummary || {};
+      const summary = responseSummary;
 
       if (summary) {
         setStatusSummary(summary);
@@ -144,7 +143,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
     if (storeId) {
       fetchQueue(true);
     }
-  }, [storeId, selectedStatus]);
+  }, [storeId, selectedStatus, currentPage, readyWindow, customReadyMinutes]);
 
   useEffect(() => {
     if (!autoRefresh || !storeId) return;
@@ -152,7 +151,17 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       fetchQueue(false);
     }, 5000);
     return () => clearInterval(interval);
-  }, [autoRefresh, storeId, selectedStatus]);
+  }, [autoRefresh, storeId, selectedStatus, currentPage, readyWindow, customReadyMinutes]);
+
+  const changeStatus = (status) => {
+    setSelectedStatus(status);
+    setCurrentPage(1);
+  };
+
+  const changeReadyWindow = (value) => {
+    setReadyWindow(value);
+    setCurrentPage(1);
+  };
 
   const handleStatusUpdate = async (orderId, nextStatus) => {
     try {
@@ -261,7 +270,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setSelectedStatus(tab.key)}
+            onClick={() => changeStatus(tab.key)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1 active:scale-95 ${
               selectedStatus === tab.key
                 ? 'bg-green-700 text-white shadow-2xs'
@@ -272,6 +281,42 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             <span className="font-black opacity-80">· {tab.count}</span>
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50/70 p-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className="text-[11px] font-bold text-gray-600">Coming in</span>
+          <select
+            value={readyWindow}
+            onChange={(event) => changeReadyWindow(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-500 sm:flex-none"
+            aria-label="Filter orders by ready time"
+          >
+            <option value="ALL">Any time</option>
+            <option value="10">Next 10 minutes</option>
+            <option value="20">Next 20 minutes</option>
+            <option value="CUSTOM">Custom minutes</option>
+          </select>
+          {readyWindow === 'CUSTOM' && (
+            <input
+              type="number"
+              min="1"
+              max="1440"
+              value={customReadyMinutes}
+              onChange={(event) => {
+                setCustomReadyMinutes(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Minutes"
+              className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold outline-none focus:ring-2 focus:ring-green-500"
+              aria-label="Custom ready time in minutes"
+            />
+          )}
+        </div>
+        <span className="text-[10px] font-semibold text-gray-400 sm:text-right">
+          {pagination.totalRecords} order{pagination.totalRecords === 1 ? '' : 's'}
+        </span>
       </div>
 
       {/* Order Cards */}
@@ -546,6 +591,32 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+          <button
+            type="button"
+            disabled={!pagination.hasPrevPage}
+            onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+            className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-600 transition disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            Previous
+          </button>
+          <span className="text-[11px] font-bold text-gray-500">
+            Page {pagination.currentPage} of {pagination.totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={!pagination.hasNextPage}
+            onClick={() => setCurrentPage((page) => page + 1)}
+            className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-600 transition disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

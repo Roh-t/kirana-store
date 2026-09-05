@@ -200,21 +200,32 @@ export class OrderService {
   }
 
   static async getStoreOrderQueue(storeId, filters = {}) {
-    const { status, page = 1, limit = 50 } = filters;
+    const { status, page = 1, limit = 20, readyWithinMinutes } = filters;
     const query = { storeId };
 
     if (status && status !== 'ALL') {
       query.orderStatus = status;
     }
 
-    const skip = (page - 1) * limit;
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const minutes = Number(readyWithinMinutes);
+    if (Number.isFinite(minutes) && minutes > 0) {
+      const now = new Date();
+      query.estimatedReadyAt = {
+        $gte: now,
+        $lte: new Date(now.getTime() + minutes * 60000)
+      };
+    }
+
+    const skip = (pageNumber - 1) * pageSize;
 
     const [orders, totalRecords, statusCounts] = await Promise.all([
       Order.find(query)
         .populate('customerId', 'name phone udharBalance')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(pageSize),
       Order.countDocuments(query),
       Order.aggregate([
         { $match: { storeId } },
@@ -240,10 +251,42 @@ export class OrderService {
       statusSummary,
       pagination: {
         totalRecords,
-        currentPage: Number(page),
-        totalPages: Math.ceil(totalRecords / limit) || 1
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalRecords / pageSize) || 1,
+        pageSize,
+        hasNextPage: pageNumber < (Math.ceil(totalRecords / pageSize) || 1),
+        hasPrevPage: pageNumber > 1
       }
     };
+  }
+
+  static async sendUnattendedOrderReminders() {
+    const reminderBefore = new Date(Date.now() - 60 * 60 * 1000);
+    let remindedCount = 0;
+
+    while (true) {
+      const order = await Order.findOneAndUpdate(
+        {
+          orderStatus: 'PENDING',
+          createdAt: { $lte: reminderBefore },
+          unattendedReminderSentAt: null
+        },
+        { $set: { unattendedReminderSentAt: new Date() } },
+        { new: true, sort: { createdAt: 1 } }
+      );
+
+      if (!order) break;
+
+      await NotificationService.createNotification(order.storeId, null, {
+        type: 'SYSTEM',
+        title: 'Order Waiting for Attention',
+        message: `Order ${order.orderNumber} has been waiting for more than 1 hour.`,
+        data: { orderId: order._id, orderNumber: order.orderNumber }
+      });
+      remindedCount += 1;
+    }
+
+    return remindedCount;
   }
 
   static async updateOrderStatus(storeId, userId, orderId, nextStatus, cancellationReason) {
