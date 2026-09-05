@@ -39,12 +39,6 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       ]);
       setProducts(prodRes.data);
       setCategories(catRes.data);
-      if (masterSearch.trim().length >= 2) {
-        const masterRes = await adminService.searchMasterProducts(masterSearch);
-        setMasterSuggestions(masterRes.data || []);
-      } else {
-        setMasterSuggestions([]);
-      }
     } catch (err) {
       console.error('Failed to load catalog data', err);
     } finally {
@@ -56,7 +50,29 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
     if (storeId) {
       fetchData();
     }
-  }, [storeId, search, selectedCategory, catalogVersion, masterSearch]);
+  }, [storeId, search, selectedCategory, catalogVersion]);
+
+  useEffect(() => {
+    const query = masterSearch.trim();
+    let isCurrentRequest = true;
+
+    if (query.length < 2) return undefined;
+
+    const timer = setTimeout(async () => {
+      try {
+        const masterRes = await adminService.searchMasterProducts(query);
+        if (isCurrentRequest) setMasterSuggestions(masterRes.data || []);
+      } catch (err) {
+        if (isCurrentRequest) setMasterSuggestions([]);
+        console.error('Failed to search shared product catalog', err);
+      }
+    }, 250);
+
+    return () => {
+      isCurrentRequest = false;
+      clearTimeout(timer);
+    };
+  }, [masterSearch]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -113,6 +129,11 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
       imageUrl: '',
       taxRate: 0
     });
+  };
+
+  const updateMasterSearch = (value) => {
+    setMasterSearch(value);
+    setMasterSuggestions([]);
   };
 
   const openEdit = (p) => {
@@ -361,7 +382,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
                 <input
                   type="text"
                   value={masterSearch}
-                  onChange={(e) => setMasterSearch(e.target.value)}
+                  onChange={(e) => updateMasterSearch(e.target.value)}
                   placeholder="Search product or category, e.g. atta"
                   className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
                 />
@@ -381,7 +402,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0 }) => {
                             sellingPrice: suggestion.sellingPrice,
                             imageUrl: suggestion.imageUrl || ''
                           });
-                          setMasterSearch(suggestion.name);
+                          setMasterSearch('');
                           setMasterSuggestions([]);
                         }}
                         className="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-white p-1.5 text-left hover:border-green-400"
