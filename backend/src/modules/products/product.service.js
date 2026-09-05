@@ -5,6 +5,7 @@ import { CategoryService } from '../categories/category.service.js';
 import { ProductValidator } from './product.validator.js';
 import { Inventory } from '../inventory/inventory.model.js';
 import { SubscriptionService } from '../subscriptions/subscription.service.js';
+import { MasterProduct } from '../masterCatalog/masterProduct.model.js';
 import { ApiError } from '../../utils/apiError.js';
 
 export class ProductService {
@@ -17,6 +18,17 @@ export class ProductService {
 
     const existingCategories = await Category.find({ storeId, isDeleted: false });
     const categoryByName = new Map(existingCategories.map((category) => [category.name.trim().toLowerCase(), category]));
+    const productNames = productRows.map((row) => String(row.name || '').trim()).filter(Boolean);
+    const masterProducts = productNames.length
+      ? await MasterProduct.find({ isActive: true, $or: [{ name: { $in: productNames } }, { alias: { $in: productNames } }] })
+        .select('name alias categoryName imageUrl')
+        .lean()
+      : [];
+    const masterByName = new Map();
+    masterProducts.forEach((product) => {
+      masterByName.set(product.name.trim().toLowerCase(), product);
+      if (product.alias) masterByName.set(product.alias.trim().toLowerCase(), product);
+    });
     const categoriesToCreate = [];
     const seenCategoryNames = new Set();
 
@@ -43,13 +55,37 @@ export class ProductService {
     categoriesToCreate.forEach((category) => categoryByName.set(category.name.trim().toLowerCase(), category));
 
     const validatedProducts = productRows.map((row, index) => {
-      const categoryName = String(row.categoryName || row.category || '').trim();
-      const category = categoryByName.get(categoryName.toLowerCase());
-      if (!category) {
-        throw ApiError.badRequest(`Product row ${index + 2}: category "${categoryName}" was not found`);
+      const masterProduct = masterByName.get(String(row.name || '').trim().toLowerCase());
+      const categoryName = String(
+        row.categoryName || row.category || (categoryByName.has(String(row.regionalName || '').trim().toLowerCase())
+          ? row.regionalName
+          : masterProduct?.categoryName || row.regionalName || 'General')
+      ).trim();
+      if (!categoryByName.has(categoryName.toLowerCase())) {
+        const categoryData = {
+          _id: new mongoose.Types.ObjectId(),
+          storeId,
+          name: categoryName,
+          slug: CategoryService.generateCategorySlug(categoryName),
+          description: null,
+          sortOrder: existingCategories.length + categoriesToCreate.length,
+          isActive: true,
+          isDeleted: false
+        };
+        categoriesToCreate.push(categoryData);
+        categoryByName.set(categoryName.toLowerCase(), categoryData);
       }
+      const category = categoryByName.get(categoryName.toLowerCase());
       try {
-        return ProductValidator.validateCreateProduct({ ...row, categoryId: category._id });
+        return ProductValidator.validateCreateProduct({
+          ...row,
+          categoryId: category._id,
+          imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
+          unit: row.unit || 'PIECE',
+          unitQuantity: row.unitQuantity || 1,
+          purchasePrice: row.purchasePrice || 0,
+          taxRate: row.taxRate || 0
+        });
       } catch (error) {
         throw ApiError.badRequest(`Product row ${index + 2}: ${error.message}`, error.errors);
       }

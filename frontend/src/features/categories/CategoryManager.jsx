@@ -127,7 +127,11 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
         const sheetName = workbook.SheetNames.find((item) => item.toLowerCase() === name.toLowerCase());
         return sheetName ? XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' }) : [];
       };
-      const nextData = { categories: readSheet('Categories'), products: readSheet('Products') };
+      const productsSheet = workbook.SheetNames.find((item) => item.toLowerCase() === 'products') || workbook.SheetNames[0];
+      const nextData = {
+        categories: readSheet('Categories'),
+        products: productsSheet ? XLSX.utils.sheet_to_json(workbook.Sheets[productsSheet], { defval: '' }) : []
+      };
       if (nextData.categories.length === 0 && nextData.products.length === 0) {
         throw new Error('Add rows to the Categories or Products sheet before uploading.');
       }
