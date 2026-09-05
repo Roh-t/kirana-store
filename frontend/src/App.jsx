@@ -343,10 +343,10 @@ function DashboardView() {
           )}
 
           {/* Compact Floating Mobile Bottom Navigation */}
-          <nav className="sm:hidden fixed bottom-2.5 left-1/2 -translate-x-1/2 w-[94%] max-w-sm bg-white/95 backdrop-blur-md border border-gray-100 rounded-2xl px-2 py-1.5 z-40 flex items-center justify-around shadow-[0_8px_25px_rgba(0,0,0,0.08)]">
+          <nav className="sm:hidden fixed bottom-2.5 left-1/2 -translate-x-1/2 w-[94%] max-w-sm bg-white/95 backdrop-blur-md border border-gray-100 rounded-2xl px-2 py-1.5 z-40 flex items-center shadow-[0_8px_25px_rgba(0,0,0,0.08)]">
             <button
               onClick={() => setStoreModuleTab('HOME')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'HOME' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
@@ -356,7 +356,7 @@ function DashboardView() {
 
             <button
               onClick={() => setStoreModuleTab('QUEUE')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'QUEUE' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
@@ -366,7 +366,7 @@ function DashboardView() {
 
             <button
               onClick={() => setStoreModuleTab('CATALOG')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'CATALOG' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
@@ -376,7 +376,7 @@ function DashboardView() {
 
             <button
               onClick={() => setStoreModuleTab('INVENTORY')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'INVENTORY' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
@@ -386,7 +386,7 @@ function DashboardView() {
 
             <button
               onClick={() => setStoreModuleTab('CUSTOMERS')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'CUSTOMERS' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
@@ -396,12 +396,22 @@ function DashboardView() {
 
             <button
               onClick={() => setStoreModuleTab('ANALYTICS')}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
                 storeModuleTab === 'ANALYTICS' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
               }`}
             >
               <TrendingUp className="w-4 h-4" />
               <span className="text-[9px] mt-0.5">Reports</span>
+            </button>
+
+            <button
+              onClick={() => setStoreModuleTab('SETTINGS')}
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition ${
+                storeModuleTab === 'SETTINGS' ? 'bg-emerald-50 text-emerald-700 font-black' : 'text-gray-400 font-medium'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              <span className="text-[9px] mt-0.5">Settings</span>
             </button>
           </nav>
         </div>
