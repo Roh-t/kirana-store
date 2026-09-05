@@ -5,6 +5,7 @@ import { ApiError } from '../../utils/apiError.js';
 
 export class InventoryService {
   static async getInventoryByStore(storeId, filters = {}) {
+    const { page = 1, limit = 20, search, stockFilter, stockLimit } = filters;
     const query = { storeId };
 
     if (filters.lowStock === 'true') {
@@ -12,16 +13,48 @@ export class InventoryService {
       query.$expr = { $lte: ['$stockQuantity', '$reorderPoint'] };
     }
 
-    const inventoryRecords = await Inventory.find(query)
+    if (stockFilter === 'LOW') query.$expr = { $lte: ['$stockQuantity', '$reorderPoint'] };
+    if (stockFilter === 'OUT') query.stockQuantity = { $lte: 0 };
+    if (stockFilter === 'BELOW' && stockLimit !== undefined && stockLimit !== '') {
+      query.stockQuantity = { $lt: Number(stockLimit) };
+    }
+
+    const productQuery = { storeId, isDeleted: false };
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      productQuery.$or = [{ name: searchRegex }, { regionalName: searchRegex }];
+    }
+
+    const matchingProducts = await Product.find(productQuery).select('_id');
+    query.productId = { $in: matchingProducts.map((product) => product._id) };
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const [inventoryRecords, totalRecords] = await Promise.all([
+      Inventory.find(query)
       .populate({
         path: 'productId',
         select: 'name regionalName unit unitQuantity mrp sellingPrice barcode imageUrl isAvailable categoryId',
         populate: { path: 'categoryId', select: 'name' }
       })
-      .sort({ stockQuantity: 1 });
+      .sort({ stockQuantity: 1 })
+      .skip(skip)
+      .limit(pageSize),
+      Inventory.countDocuments(query)
+    ]);
 
-    // Filter out deleted products if any
-    return inventoryRecords.filter((inv) => inv.productId && !inv.productId.isDeleted);
+    return {
+      inventory: inventoryRecords.filter((inv) => inv.productId),
+      pagination: {
+        totalRecords,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalRecords / pageSize) || 1,
+        pageSize,
+        hasNextPage: pageNumber < (Math.ceil(totalRecords / pageSize) || 1),
+        hasPrevPage: pageNumber > 1
+      }
+    };
   }
 
   static async adjustStock(storeId, userId, validatedData) {

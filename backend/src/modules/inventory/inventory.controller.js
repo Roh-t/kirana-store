@@ -5,12 +5,13 @@ import { ApiResponse } from '../../utils/apiResponse.js';
 export class InventoryController {
   static async getInventory(req, res, next) {
     try {
-      const inventory = await InventoryService.getInventoryByStore(req.storeId, req.query);
+      const { inventory, pagination } = await InventoryService.getInventoryByStore(req.storeId, req.query);
 
-      return ApiResponse.success(res, {
+      return ApiResponse.paginated(res, {
         statusCode: 200,
         message: 'Inventory balances retrieved successfully',
-        data: inventory
+        data: inventory,
+        pagination
       });
     } catch (error) {
       next(error);

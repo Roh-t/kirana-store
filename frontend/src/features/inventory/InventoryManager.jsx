@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
-import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter } from 'lucide-react';
+import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -16,12 +16,21 @@ export const InventoryManager = ({ storeId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [stockFilter, setStockFilter] = useState('ALL');
   const [stockLimit, setStockLimit] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await inventoryService.getInventory(storeId);
-      setInventory(res.data);
+      const res = await inventoryService.getInventory(storeId, {
+        page: currentPage,
+        limit: 20,
+        ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+        stockFilter,
+        ...(stockFilter === 'BELOW' && stockLimit !== '' ? { stockLimit } : {})
+      });
+      setInventory(Array.isArray(res.data) ? res.data : []);
+      setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: res.data?.length || 0 });
     } catch (err) {
       console.error('Failed to load inventory', err);
     } finally {
@@ -33,7 +42,17 @@ export const InventoryManager = ({ storeId }) => {
     if (storeId) {
       fetchInventory();
     }
-  }, [storeId]);
+  }, [storeId, currentPage, searchQuery, stockFilter, stockLimit]);
+
+  const updateSearch = (value) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const updateStockFilter = (value) => {
+    setStockFilter(value);
+    setCurrentPage(1);
+  };
 
   const openAdjustModal = (item, defaultType = 'PURCHASE') => {
     setSelectedItem(item);
@@ -76,19 +95,7 @@ export const InventoryManager = ({ storeId }) => {
   };
 
   const lowStockCount = inventory.filter((inv) => inv.stockQuantity <= inv.reorderPoint).length;
-  const normalizedSearch = searchQuery.trim().toLowerCase();
-  const filteredInventory = inventory.filter((inv) => {
-    const product = inv.productId;
-    const matchesSearch = !normalizedSearch || [product?.name, product?.regionalName]
-      .filter(Boolean)
-      .some((name) => name.toLowerCase().includes(normalizedSearch));
-    const matchesStockFilter = stockFilter === 'ALL'
-      || (stockFilter === 'LOW' && inv.stockQuantity <= inv.reorderPoint)
-      || (stockFilter === 'OUT' && inv.stockQuantity <= 0)
-      || (stockFilter === 'BELOW' && stockLimit !== '' && inv.stockQuantity < Number(stockLimit));
-
-    return matchesSearch && matchesStockFilter;
-  });
+  const filteredInventory = inventory;
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs space-y-3">
@@ -118,7 +125,7 @@ export const InventoryManager = ({ storeId }) => {
           <input
             type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => updateSearch(e.target.value)}
             placeholder="Search item name..."
             className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-gray-50/60"
           />
@@ -128,7 +135,7 @@ export const InventoryManager = ({ storeId }) => {
           <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
           <select
             value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value)}
+            onChange={(e) => updateStockFilter(e.target.value)}
             className="flex-1 sm:w-48 px-2.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-white font-semibold text-gray-700"
             aria-label="Filter stock levels"
           >
@@ -222,6 +229,35 @@ export const InventoryManager = ({ storeId }) => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && pagination.totalRecords > 0 && (
+        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+          <span className="text-[11px] text-gray-500 font-semibold">
+            Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1}-{Math.min(pagination.currentPage * pagination.pageSize, pagination.totalRecords)} of {pagination.totalRecords}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+              disabled={!pagination.hasPrevPage}
+              className="p-1.5 border border-gray-200 rounded-lg text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="px-2 text-[11px] font-bold text-gray-700">{pagination.currentPage} / {pagination.totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => page + 1)}
+              disabled={!pagination.hasNextPage}
+              className="p-1.5 border border-gray-200 rounded-lg text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
