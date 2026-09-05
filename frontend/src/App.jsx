@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { LoginPage } from './features/auth/LoginPage';
@@ -15,6 +15,7 @@ import { StoreAnalyticsDashboard } from './features/analytics/StoreAnalyticsDash
 import { StaffManager } from './features/stores/StaffManager';
 import { StoreTimingSettings } from './features/stores/StoreTimingSettings';
 import { AuditLogViewer } from './features/auditLogs/AuditLogViewer';
+import { NotificationFeed } from './features/notifications/NotificationFeed';
 import { SuperAdminDashboard } from './features/admin/SuperAdminDashboard';
 import { PublicStorefront } from './features/publicStore/PublicStorefront';
 import { HealthBadge } from './components/common/HealthBadge';
@@ -32,7 +33,6 @@ import {
   TrendingUp,
   Settings,
   ArrowUpRight,
-  Bell,
   Sprout,
   CheckCircle2,
   AlertCircle
@@ -48,30 +48,7 @@ function DashboardView() {
   const [catalogVersion, setCatalogVersion] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Notifications State & Dropdown Handlers
-  const [showNotifications, setShowNotifications] = useState(false);
-  const notifRef = useRef(null);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Store Live', message: 'Your store is active and accepting orders online.', time: 'Just now', read: false },
-    { id: 2, title: 'Welcome to KiranaFlow', message: '14-day Pro trial is currently active.', time: '1h ago', read: false }
-  ]);
-
   const isSuperAdmin = user?.roles?.some((role) => (role.roleId?.name || role.roleId) === 'SUPER_ADMIN');
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setShowNotifications(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
 
   const fetchStores = async () => {
     try {
@@ -143,60 +120,7 @@ function DashboardView() {
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
 
-          {/* Functional Notification Bell Button */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-8 h-8 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-700 shadow-2xs relative hover:bg-gray-50 transition active:scale-95"
-              title="Notifications"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
-              )}
-            </button>
-
-            {/* Notification Dropdown Panel */}
-            {showNotifications && (
-              <div className="absolute right-0 top-10 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-black text-gray-900">Notifications</h4>
-                    {unreadCount > 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 text-[9px] font-bold">
-                        {unreadCount} new
-                      </span>
-                    )}
-                  </div>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllAsRead}
-                      className="text-[10px] text-emerald-600 font-bold hover:underline"
-                    >
-                      Mark read
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-2 max-h-56 overflow-y-auto no-scrollbar">
-                  {notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`p-2 rounded-xl text-left border ${
-                        n.read ? 'bg-gray-50/50 border-gray-100' : 'bg-emerald-50/50 border-emerald-100'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-gray-900">{n.title}</span>
-                        <span className="text-[9px] text-gray-400">{n.time}</span>
-                      </div>
-                      <p className="text-[10px] text-gray-600 mt-0.5">{n.message}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationFeed storeId={activeStore?._id} />
 
           {isSuperAdmin && (
             <button
