@@ -122,6 +122,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         ...(readyWithinMinutes && readyWithinMinutes !== 'ALL' ? { readyWithinMinutes } : {})
       };
       const [res, summaryRes] = await Promise.all([
+        
         orderService.getOrderQueue(storeId, queueParams),
         orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 100 })
       ]);

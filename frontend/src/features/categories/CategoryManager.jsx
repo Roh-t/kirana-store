@@ -17,6 +17,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [importData, setImportData] = useState({ categories: [], products: [] });
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState(null);
+  const [importResult, setImportResult] = useState(null);
 
   const fetchCategories = async () => {
     try {
@@ -151,14 +152,19 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     setImportError(null);
     try {
       const res = await productService.importCatalog(storeId, importData);
-      setShowImportModal(false);
       setImportFile(null);
       setImportData({ categories: [], products: [] });
       await fetchCategories();
       onCategoryChanged?.();
-      window.alert(`Imported ${res.data.categoriesCreated} categories and ${res.data.productsCreated} products.`);
+      if (res.data.skippedRows?.length) {
+        setImportResult(res.data);
+      } else {
+        setShowImportModal(false);
+        window.alert(`Imported ${res.data.categoriesCreated} categories and ${res.data.productsCreated} products.`);
+      }
     } catch (err) {
-      setImportError(err.message || 'Import failed. No products were added.');
+      const details = err.details?.map((detail) => detail.reason || detail.message).join('; ');
+      setImportError(details ? `${err.message}: ${details}` : err.message || 'Import failed. No products were added.');
     } finally {
       setIsImporting(false);
     }
@@ -181,6 +187,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
           <button
             onClick={() => {
               setImportError(null);
+              setImportResult(null);
               setShowImportModal(true);
             }}
             className="px-2.5 py-1.5 border border-green-200 text-green-700 bg-green-50 rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
@@ -297,6 +304,16 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
             )}
 
             {importError && <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl font-medium">{importError}</div>}
+            {importResult && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1.5">
+                <p className="font-bold">
+                  Imported {importResult.productsCreated} products. Skipped {importResult.skippedRows.length} row(s).
+                </p>
+                {importResult.skippedRows.map((item) => (
+                  <p key={item.row}><strong>Excel row {item.row}:</strong> {item.reason}</p>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
               <button type="button" onClick={() => setShowImportModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl">Cancel</button>
               <button type="button" onClick={handleBulkImport} disabled={!importFile || isImporting} className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-xl flex items-center gap-1 disabled:opacity-50">

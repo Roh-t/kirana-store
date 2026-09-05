@@ -54,7 +54,8 @@ export class ProductService {
 
     categoriesToCreate.forEach((category) => categoryByName.set(category.name.trim().toLowerCase(), category));
 
-    const validatedProducts = productRows.map((row, index) => {
+    const skippedRows = [];
+    const validatedProducts = productRows.reduce((validProducts, row, index) => {
       const masterProduct = masterByName.get(String(row.name || '').trim().toLowerCase());
       const categoryName = String(
         row.categoryName || row.category || (categoryByName.has(String(row.regionalName || '').trim().toLowerCase())
@@ -77,7 +78,7 @@ export class ProductService {
       }
       const category = categoryByName.get(categoryName.toLowerCase());
       try {
-        return ProductValidator.validateCreateProduct({
+        validProducts.push(ProductValidator.validateCreateProduct({
           ...row,
           categoryId: category._id,
           imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
@@ -85,11 +86,17 @@ export class ProductService {
           unitQuantity: row.unitQuantity || 1,
           purchasePrice: row.purchasePrice || 0,
           taxRate: row.taxRate || 0
-        });
+        }));
       } catch (error) {
-        throw ApiError.badRequest(`Product row ${index + 2}: ${error.message}`, error.errors);
+        const details = error.errors?.map((detail) => detail.message).join('; ') || error.message;
+        skippedRows.push({ row: index + 2, reason: details });
       }
-    });
+      return validProducts;
+    }, []);
+
+    if (validatedProducts.length === 0 && productRows.length > 0 && categoriesToCreate.length === 0) {
+      throw ApiError.badRequest('No valid product rows were found', skippedRows);
+    }
 
     if (validatedProducts.length > 0) {
       const { usage } = await SubscriptionService.getStoreSubscription(storeId);
@@ -134,7 +141,8 @@ export class ProductService {
 
     return {
       categoriesCreated: categoriesToCreate.length,
-      productsCreated: createdProducts.length
+      productsCreated: createdProducts.length,
+      skippedRows
     };
   }
 
