@@ -154,7 +154,7 @@ export const PublicStorefront = ({ slug }) => {
 
           {/* Category Horizontal Pill Tabs */}
           {categories.length > 0 && (
-            <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar pb-0.5">
+            <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar pb-2">
               <button
                 onClick={() => setSelectedCategory('')}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition active:scale-95 ${
