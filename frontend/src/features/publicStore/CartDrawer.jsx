@@ -129,17 +129,17 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                     const displayQuantity = convertFromBaseQuantity(quantity, displayUnit, product.unit);
 
                     return (
-                  <div key={product._id} className="pt-2 pb-2 flex items-center justify-between gap-2">
+                  <div key={product._id} className="pt-2 pb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-bold text-gray-900 truncate">{product.name}</h4>
                       <p className="text-[11px] text-gray-500">₹{product.sellingPrice} per {product.unit}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center bg-gray-100 rounded-lg">
+                    <div className="w-full sm:w-auto flex items-center justify-end gap-2">
+                      <div className="min-w-0 flex max-w-full items-center bg-gray-100 rounded-lg">
                         <button
                           onClick={() => updateQuantity(product, -convertToBaseQuantity(1, displayUnit, product.unit))}
-                          className="p-1 text-gray-600 hover:bg-gray-200 rounded-l-lg"
+                          className="shrink-0 p-1.5 text-gray-600 hover:bg-gray-200 rounded-l-lg"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -164,7 +164,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             });
                           }}
                           aria-label={`Quantity for ${product.name}`}
-                          className="w-14 bg-transparent text-center text-xs font-bold outline-none"
+                          className="min-w-0 w-8 flex-1 bg-transparent text-center text-xs font-bold outline-none"
                         />
                         <select
                           value={displayUnit}
@@ -177,7 +177,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             }));
                           }}
                           aria-label={`Unit for ${product.name}`}
-                          className="min-w-16 bg-white text-green-700 border border-green-200 rounded-md px-1.5 py-1 text-[10px] font-black outline-none cursor-pointer"
+                          className="w-12 shrink-0 bg-white text-green-700 border border-green-200 rounded-md px-0.5 py-1 text-[10px] font-black outline-none cursor-pointer"
                         >
                           {getQuantityUnitOptions(product.unit).map(({ unit }) => (
                             <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
@@ -185,7 +185,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         </select>
                         <button
                           onClick={() => updateQuantity(product, convertToBaseQuantity(1, displayUnit, product.unit))}
-                          className="p-1 text-gray-600 hover:bg-gray-200 rounded-r-lg"
+                          className="shrink-0 p-1.5 text-gray-600 hover:bg-gray-200 rounded-r-lg"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
