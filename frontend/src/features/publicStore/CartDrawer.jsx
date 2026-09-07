@@ -130,9 +130,18 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
 
                     return (
                   <div key={product._id} className="pt-2 pb-2 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-gray-900 truncate">{product.name}</h4>
-                      <p className="text-[11px] text-gray-500">₹{product.sellingPrice} per {product.unit}</p>
+                    <div className="flex flex-1 min-w-0 items-center gap-2">
+                      <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                          <ShoppingBag className="w-4 h-4 text-gray-300" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-gray-900 truncate">{product.name}</h4>
+                        <p className="text-[11px] text-gray-500">₹{product.sellingPrice} per {product.unit}</p>
+                      </div>
                     </div>
 
                     <div className="w-full sm:w-auto flex items-center justify-end gap-2">
