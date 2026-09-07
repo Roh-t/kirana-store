@@ -184,7 +184,7 @@ export const PublicStorefront = ({ slug }) => {
       </header>
 
       {/* Product Catalog */}
-      <main className="max-w-6xl mx-auto p-3.5 sm:p-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+      <main className="max-w-6xl mx-auto px-3.5 pb-4 pt-5 sm:px-4 sm:pt-6 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
         {catalog.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-3xl border border-gray-200/80 p-6">
             <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-2" />
@@ -226,7 +226,7 @@ export const PublicStorefront = ({ slug }) => {
                 </div>
 
                 {/* Touch-Friendly Add/Quantity Controls */}
-                <div className="shrink-0 flex justify-end">
+                <div className="w-full min-w-0 flex justify-end">
                   {!product.inStock ? (
                     <span className="text-[11px] font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-lg">
                       Out of Stock
@@ -243,7 +243,7 @@ export const PublicStorefront = ({ slug }) => {
                     <div className="flex items-center bg-green-600 text-white rounded-xl shadow-2xs">
                       <button
                         onClick={() => updateQuantity(product, -convertToBaseQuantity(1, displayUnit, product.unit))}
-                        className="p-2.5 active:bg-green-700 rounded-l-xl transition"
+                        className="shrink-0 p-2 active:bg-green-700 rounded-l-xl transition"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -269,7 +269,7 @@ export const PublicStorefront = ({ slug }) => {
                         }}
                         onClick={(event) => event.stopPropagation()}
                         aria-label={`Quantity for ${product.name}`}
-                        className="w-14 bg-transparent text-center text-xs font-black outline-none"
+                        className="min-w-0 flex-1 w-8 bg-transparent text-center text-xs font-black outline-none"
                       />
                       <select
                         value={displayUnit}
@@ -282,7 +282,7 @@ export const PublicStorefront = ({ slug }) => {
                           }));
                         }}
                         aria-label={`Unit for ${product.name}`}
-                        className="min-w-16 bg-green-700 text-white border border-green-400 rounded-md px-1.5 py-1 text-[10px] font-black outline-none cursor-pointer"
+                        className="w-12 shrink-0 bg-green-700 text-white border border-green-400 rounded-md px-0.5 py-1 text-[10px] font-black outline-none cursor-pointer"
                       >
                         {getQuantityUnitOptions(product.unit).map(({ unit }) => (
                           <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
@@ -290,7 +290,7 @@ export const PublicStorefront = ({ slug }) => {
                       </select>
                       <button
                         onClick={() => updateQuantity(product, convertToBaseQuantity(1, displayUnit, product.unit))}
-                        className="p-2.5 active:bg-green-700 rounded-r-xl transition"
+                        className="shrink-0 p-2 active:bg-green-700 rounded-r-xl transition"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
