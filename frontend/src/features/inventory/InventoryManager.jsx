@@ -171,21 +171,21 @@ export const InventoryManager = ({ storeId }) => {
           <p className="text-xs text-gray-500 font-bold">No items match this search or filter</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredInventory.map((inv) => {
             const product = inv.productId;
             const isLow = inv.stockQuantity <= inv.reorderPoint;
 
             return (
-              <div key={inv._id} className="py-2.5 flex items-center justify-between gap-2">
-                <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+              <div key={inv._id} className="p-3 rounded-2xl border border-gray-100 bg-gray-50/40 flex flex-col gap-3">
+                <div className="w-full h-28 shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
                   {product?.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <Package className="w-5 h-5 text-gray-300" />
                   )}
                 </div>
-                <div className="min-w-0 flex-1 pr-2">
+                <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">{product?.name}</span>
                     {product?.regionalName && (
@@ -197,8 +197,8 @@ export const InventoryManager = ({ storeId }) => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="text-right">
+                <div className="flex items-center justify-between gap-2 shrink-0">
+                  <div>
                     <span
                       className={`text-xs sm:text-sm font-black ${
                         isLow ? 'text-amber-600' : inv.stockQuantity === 0 ? 'text-red-600' : 'text-gray-900'

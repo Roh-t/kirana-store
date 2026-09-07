@@ -183,8 +183,8 @@ export const PublicStorefront = ({ slug }) => {
         </div>
       </header>
 
-      {/* Product Catalog Mobile List */}
-      <main className="max-w-md mx-auto p-3.5 sm:p-4 space-y-2.5">
+      {/* Product Catalog */}
+      <main className="max-w-6xl mx-auto p-3.5 sm:p-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
         {catalog.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-3xl border border-gray-200/80 p-6">
             <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-2" />
@@ -201,16 +201,16 @@ export const PublicStorefront = ({ slug }) => {
             return (
               <div
                 key={product._id}
-                className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-3 active:bg-gray-50/50 transition"
+                className="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-2xs flex flex-col gap-2.5 active:bg-gray-50/50 transition"
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="w-full h-24 sm:h-32 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
                   {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <ShoppingBag className="w-6 h-6 text-gray-300" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0">
                   <h3 className="text-xs sm:text-sm font-bold text-gray-900 truncate">{product.name}</h3>
                   {product.regionalName && (
                     <p className="text-xs font-semibold text-green-700 mt-0.5">{product.regionalName}</p>
@@ -226,7 +226,7 @@ export const PublicStorefront = ({ slug }) => {
                 </div>
 
                 {/* Touch-Friendly Add/Quantity Controls */}
-                <div className="shrink-0">
+                <div className="shrink-0 flex justify-end">
                   {!product.inStock ? (
                     <span className="text-[11px] font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-lg">
                       Out of Stock
