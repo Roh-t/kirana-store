@@ -95,8 +95,8 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-green-700" />
-            <h3 className="font-bold text-gray-900 text-base">Your Order Cart</h3>
-            <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">
+            <h3 className="font-bold text-gray-900 text-sm">Your Order Cart</h3>
+            <span className="bg-green-100 text-green-800 text-[11px] px-2 py-0.5 rounded-full font-bold">
               {totalItemsCount}
             </span>
           </div>
@@ -139,8 +139,8 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-gray-900 truncate">{product.name}</h4>
-                        <p className="text-[11px] text-gray-500">₹{product.sellingPrice} per {product.unit}</p>
+                        <h4 className="text-[11px] font-bold text-gray-900 truncate">{product.name}</h4>
+                        <p className="text-[10px] text-gray-500">₹{product.sellingPrice} per {product.unit}</p>
                       </div>
                     </div>
 
@@ -173,7 +173,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                             });
                           }}
                           aria-label={`Quantity for ${product.name}`}
-                          className="min-w-0 w-8 flex-1 bg-transparent text-center text-xs font-bold outline-none"
+                          className="min-w-0 w-8 flex-1 bg-transparent text-center text-[11px] font-bold outline-none"
                         />
                         <select
                           value={displayUnit}
@@ -200,7 +200,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         </button>
                       </div>
 
-                      <span className="text-xs font-extrabold text-gray-900 w-12 text-right">₹{lineTotal}</span>
+                      <span className="text-[11px] font-extrabold text-gray-900 w-12 text-right">₹{lineTotal}</span>
 
                       <button
                         onClick={() => removeFromCart(product._id)}
@@ -217,12 +217,12 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
 
               {/* Order Type Toggle */}
               <div className="bg-gray-50 p-3 rounded-2xl border border-gray-200 space-y-2">
-                <label className="block text-xs font-bold text-gray-700">Fulfillment Preference</label>
+                <label className="block text-[11px] font-bold text-gray-700">Fulfillment Preference</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setOrderType('PICKUP')}
-                    className={`py-2 text-xs font-bold rounded-xl border transition ${
+                    className={`py-2 text-[11px] font-bold rounded-xl border transition ${
                       orderType === 'PICKUP'
                         ? 'bg-green-600 text-white border-green-600'
                         : 'bg-white text-gray-700 border-gray-300'
@@ -233,7 +233,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                   <button
                     type="button"
                     onClick={() => setOrderType('DELIVERY')}
-                    className={`py-2 text-xs font-bold rounded-xl border transition ${
+                    className={`py-2 text-[11px] font-bold rounded-xl border transition ${
                       orderType === 'DELIVERY'
                         ? 'bg-green-600 text-white border-green-600'
                         : 'bg-white text-gray-700 border-gray-300'
