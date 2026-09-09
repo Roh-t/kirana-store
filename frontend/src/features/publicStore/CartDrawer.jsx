@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import { orderService } from '../../services/orderService';
 import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
+import { buildOwnerNewOrderWhatsAppLink } from '../../utils/whatsappLink';
 import { X, ShoppingBag, Plus, Minus, Trash2, MapPin, Phone, User, Check } from 'lucide-react';
 
 export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
@@ -78,6 +79,14 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
       };
 
       const res = await orderService.createPublicOrder(slug, payload);
+
+      // Auto-open WhatsApp to the store owner's number with the order details
+      // pre-filled. No WhatsApp Business API needed — just needs one tap to send.
+      const ownerWhatsAppLink = buildOwnerNewOrderWhatsAppLink(store?.phone, res.data, payload.customerDetails);
+      if (ownerWhatsAppLink) {
+        window.open(ownerWhatsAppLink, '_blank');
+      }
+
       clearCart();
       onClose();
       onOrderPlaced(res.data);
