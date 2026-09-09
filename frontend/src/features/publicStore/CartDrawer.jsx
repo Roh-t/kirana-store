@@ -80,9 +80,14 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
 
       const res = await orderService.createPublicOrder(slug, payload);
 
-      // Auto-open WhatsApp to the store owner's number with the order details
-      // pre-filled. No WhatsApp Business API needed — just needs one tap to send.
-      const ownerWhatsAppLink = buildOwnerNewOrderWhatsAppLink(store?.phone, res.data, payload.customerDetails);
+      // Auto-open WhatsApp to the store owner's actual login number (not the
+      // free-text "store contact phone", which can be mistyped/duplicated).
+      // No WhatsApp Business API needed — just needs one tap to send.
+      const ownerWhatsAppLink = buildOwnerNewOrderWhatsAppLink(
+        store?.ownerPhone || store?.phone,
+        res.data,
+        payload.customerDetails
+      );
       if (ownerWhatsAppLink) {
         window.open(ownerWhatsAppLink, '_blank');
       }

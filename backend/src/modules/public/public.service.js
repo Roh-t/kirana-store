@@ -9,15 +9,21 @@ import { getStoreAvailability } from '../stores/storeHours.util.js';
 
 export class PublicService {
   static async getPublicStore(slug) {
-    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'ACTIVE' }).select(
-      'name slug phone logoUrl address businessConfig qrConfig'
-    );
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'ACTIVE' })
+      .select('name slug phone logoUrl address businessConfig qrConfig ownerId')
+      .populate('ownerId', 'phone');
 
     if (!store) {
       throw ApiError.notFound('Kirana store not found or currently offline');
     }
 
-    return { ...store.toObject(), availability: getStoreAvailability(store) };
+    // ownerPhone is the store owner's actual login account number, used for
+    // owner-facing notifications (e.g. WhatsApp new-order alerts). This is
+    // more reliable than the free-text "phone" field which can be mistyped
+    // or duplicated across stores.
+    const ownerPhone = store.ownerId?.phone || null;
+
+    return { ...store.toObject(), ownerId: store.ownerId?._id, ownerPhone, availability: getStoreAvailability(store) };
   }
 
   static async getPublicCategories(slug) {
