@@ -311,7 +311,8 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Order history dates">
+      <div className="flex items-start gap-2" aria-label="Order history dates">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         <button
           type="button"
           onClick={() => changeDate(todayKey)}
@@ -380,6 +381,8 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
           );
         })}
 
+        </div>
+
         <div className="relative shrink-0">
           <button
             type="button"
@@ -396,7 +399,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
           </button>
 
           {calendarOpen && (
-            <div className="absolute right-0 top-full z-30 mt-2 w-[272px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+            <div className="absolute bottom-full right-0 z-30 mb-2 w-[272px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
               <div className="mb-2 flex items-center justify-between">
                 <button
                   type="button"
