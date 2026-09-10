@@ -200,7 +200,7 @@ export class OrderService {
   }
 
   static async getStoreOrderQueue(storeId, filters = {}) {
-    const { status, page = 1, limit = 20, readyWithinMinutes } = filters;
+    const { status, page = 1, limit = 20, dateFrom, dateTo } = filters;
     const query = { storeId };
 
     if (status && status !== 'ALL') {
@@ -209,12 +209,10 @@ export class OrderService {
 
     const pageNumber = Math.max(Number(page) || 1, 1);
     const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
-    const minutes = Number(readyWithinMinutes);
-    if (Number.isFinite(minutes) && minutes > 0) {
-      const now = new Date();
-      query.estimatedReadyAt = {
-        $lte: new Date(now.getTime() + minutes * 60000)
-      };
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lt = new Date(dateTo);
     }
 
     const skip = (pageNumber - 1) * pageSize;
@@ -416,4 +414,3 @@ static async modifyOrderItems(storeId, userId, orderId, updatedItems, reason) {
   return order;
 }
 }
-

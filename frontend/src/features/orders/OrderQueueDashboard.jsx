@@ -24,10 +24,8 @@ import {
   Trash2,
   FileText,
   CalendarRange
-  , ChevronLeft,
+  ,   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  ChevronUp,
   MoreHorizontal,
   Pencil,
   PhoneCall
@@ -48,15 +46,19 @@ const formatOrderTime = (value) => {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const getDateRange = (value) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const start = new Date(year, month - 1, day);
+  const end = new Date(year, month - 1, day + 1);
+  return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+};
+
 export const OrderQueueDashboard = ({ storeId, store }) => {
   const [orders, setOrders] = useState([]);
   const [statusSummary, setStatusSummary] = useState({});
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('ALL');
-  const [customDate, setCustomDate] = useState('');
-  const [readyWindow, setReadyWindow] = useState('ALL');
-  const [customReadyMinutes, setCustomReadyMinutes] = useState('');
-  const [showReadyFilters, setShowReadyFilters] = useState(false);
+  const [selectedDateFilter, setSelectedDateFilter] = useState(() => dateKey(new Date()));
+  const [availableDates, setAvailableDates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
   const [loading, setLoading] = useState(true);
@@ -68,33 +70,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [moreMenuOrderId, setMoreMenuOrderId] = useState(null);
   const [editOrderId, setEditOrderId] = useState(null);
 
-  const filteredOrders = orders.filter((order) => {
-    if (!order?.createdAt) return true;
-
-    const orderDateKey = dateKey(order.createdAt);
-
-    if (selectedDateFilter === 'ALL') return true;
-    if (selectedDateFilter === 'TODAY') {
-      const todayKey = dateKey(new Date());
-      return orderDateKey === todayKey;
-    }
-    if (selectedDateFilter === 'YESTERDAY') {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return orderDateKey === dateKey(yesterday);
-    }
-    if (selectedDateFilter === 'THIS_WEEK') {
-      const now = new Date();
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      return new Date(order.createdAt) >= startOfWeek;
-    }
-    if (selectedDateFilter === 'CUSTOM') {
-      return customDate && orderDateKey === customDate;
-    }
-
-    return true;
-  });
+  const filteredOrders = orders;
 
   const prevPendingCount = useRef(0);
 
@@ -118,12 +94,13 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const fetchQueue = async (isManual = false) => {
     try {
       if (isManual) setLoading(true);
-      const readyWithinMinutes = readyWindow === 'CUSTOM' ? customReadyMinutes : readyWindow;
+      const { dateFrom, dateTo } = getDateRange(selectedDateFilter);
       const queueParams = {
         status: selectedStatus,
         page: currentPage,
         limit: 10,
-        ...(readyWithinMinutes && readyWithinMinutes !== 'ALL' ? { readyWithinMinutes } : {})
+        dateFrom,
+        dateTo
       };
       const [res, summaryRes] = await Promise.all([
         
@@ -136,6 +113,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
 
       const responseSummary = summaryRes.meta?.statusSummary || res.meta?.statusSummary;
       const summaryOrders = Array.isArray(summaryRes.data) ? summaryRes.data : [];
+      const todayKey = dateKey(new Date());
+      const orderDates = [...summaryOrders, ...queueOrders]
+        .map((order) => order?.createdAt && dateKey(order.createdAt))
+        .filter((value) => value && value <= todayKey);
+      setAvailableDates([...new Set([todayKey, ...orderDates])].sort().reverse());
       const fallbackSummary = summaryOrders.reduce((counts, order) => {
         if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
         return counts;
@@ -161,7 +143,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
     if (storeId) {
       fetchQueue(true);
     }
-  }, [storeId, selectedStatus, currentPage, readyWindow, customReadyMinutes]);
+  }, [storeId, selectedStatus, currentPage, selectedDateFilter]);
 
   useEffect(() => {
     if (!autoRefresh || !storeId) return;
@@ -169,15 +151,15 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       fetchQueue(false);
     }, 5000);
     return () => clearInterval(interval);
-  }, [autoRefresh, storeId, selectedStatus, currentPage, readyWindow, customReadyMinutes]);
+  }, [autoRefresh, storeId, selectedStatus, currentPage, selectedDateFilter]);
 
   const changeStatus = (status) => {
     setSelectedStatus(status);
     setCurrentPage(1);
   };
 
-  const changeReadyWindow = (value) => {
-    setReadyWindow(value);
+  const changeDate = (value) => {
+    setSelectedDateFilter(value);
     setCurrentPage(1);
   };
 
@@ -301,60 +283,26 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         ))}
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-2">
-        <button
-          type="button"
-          onClick={() => setShowReadyFilters((open) => !open)}
-          className="flex w-full items-center justify-between gap-2 text-left"
-          aria-expanded={showReadyFilters}
-        >
-          <span className="flex items-center gap-2 text-[11px] font-bold text-gray-600">
-            <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            Coming in
-            {readyWindow !== 'ALL' && (
-              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-extrabold text-green-700">
-                {readyWindow === 'CUSTOM' ? `${customReadyMinutes || '?'} min` : `${readyWindow} min`}
-              </span>
-            )}
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-gray-400">
-              {pagination.totalRecords} order{pagination.totalRecords === 1 ? '' : 's'}
-            </span>
-            {showReadyFilters ? <ChevronUp className="w-3.5 h-3.5 text-gray-500" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-500" />}
-          </span>
-        </button>
-
-        {showReadyFilters && (
-          <div className="mt-2 flex flex-col gap-2 border-t border-gray-200 pt-2 sm:flex-row sm:items-center">
-            <select
-              value={readyWindow}
-              onChange={(event) => changeReadyWindow(event.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-500 sm:flex-none"
-              aria-label="Filter orders by ready time"
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Order history dates">
+        {availableDates.map((value) => {
+          const date = new Date(`${value}T00:00:00`);
+          const isToday = value === dateKey(new Date());
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => changeDate(value)}
+              className={`min-w-[74px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
+                selectedDateFilter === value
+                  ? 'border-green-700 bg-green-700 text-white shadow-2xs'
+                  : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+              }`}
             >
-              <option value="ALL">Any time</option>
-              <option value="10">Due within 10 minutes</option>
-              <option value="20">Due within 20 minutes</option>
-              <option value="CUSTOM">Due within custom minutes</option>
-            </select>
-            {readyWindow === 'CUSTOM' && (
-              <input
-                type="number"
-                min="1"
-                max="1440"
-                value={customReadyMinutes}
-                onChange={(event) => {
-                  setCustomReadyMinutes(event.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Minutes"
-                className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold outline-none focus:ring-2 focus:ring-green-500 sm:w-20"
-                aria-label="Custom ready time in minutes"
-              />
-            )}
-          </div>
-        )}
+              <span className="block text-[10px] font-bold uppercase">{isToday ? 'Today' : date.toLocaleDateString([], { weekday: 'short' })}</span>
+              <span className="block text-xs font-black">{date.toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Order Cards */}
