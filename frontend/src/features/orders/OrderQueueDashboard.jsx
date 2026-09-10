@@ -601,7 +601,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                         {moreMenuOrderId === order._id && (
                           <div
                             onClick={(event) => event.stopPropagation()}
-                            className="absolute right-0 z-10 mt-1.5 w-48 rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+                            className="absolute bottom-full right-0 z-20 mb-1.5 w-48 rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
                           >
                             <button
                               onClick={() => {
