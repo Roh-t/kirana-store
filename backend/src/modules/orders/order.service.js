@@ -225,7 +225,7 @@ export class OrderService {
         .limit(pageSize),
       Order.countDocuments(query),
       Order.aggregate([
-        { $match: { storeId } },
+        { $match: query.createdAt ? { storeId, createdAt: query.createdAt } : { storeId } },
         { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
       ])
     ]);

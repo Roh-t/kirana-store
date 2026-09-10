@@ -69,6 +69,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [moreMenuOrderId, setMoreMenuOrderId] = useState(null);
   const [editOrderId, setEditOrderId] = useState(null);
+  const [dateStats, setDateStats] = useState({});
 
   const filteredOrders = orders;
 
@@ -102,10 +103,10 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         dateFrom,
         dateTo
       };
-      const [res, summaryRes] = await Promise.all([
-        
+      const [res, summaryRes, allDatesRes] = await Promise.all([
         orderService.getOrderQueue(storeId, queueParams),
-        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 100 })
+        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 100, dateFrom, dateTo }),
+        orderService.getOrderQueue(storeId, { status: 'ALL', page: 1, limit: 200 })
       ]);
       const queueOrders = Array.isArray(res.data) ? res.data : [];
       setOrders(queueOrders);
@@ -113,11 +114,23 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
 
       const responseSummary = summaryRes.meta?.statusSummary || res.meta?.statusSummary;
       const summaryOrders = Array.isArray(summaryRes.data) ? summaryRes.data : [];
+      const allOrders = Array.isArray(allDatesRes.data) ? allDatesRes.data : [];
       const todayKey = dateKey(new Date());
-      const orderDates = [...summaryOrders, ...queueOrders]
+      const orderDates = allOrders
         .map((order) => order?.createdAt && dateKey(order.createdAt))
         .filter((value) => value && value <= todayKey);
       setAvailableDates([...new Set([todayKey, ...orderDates])].sort().reverse());
+
+      const perDateStats = allOrders.reduce((stats, order) => {
+        if (!order?.createdAt) return stats;
+        const key = dateKey(order.createdAt);
+        if (!stats[key]) stats[key] = { total: 0, pending: 0 };
+        stats[key].total += 1;
+        if (order.orderStatus === 'PENDING') stats[key].pending += 1;
+        return stats;
+      }, {});
+      setDateStats(perDateStats);
+
       const fallbackSummary = summaryOrders.reduce((counts, order) => {
         if (order.orderStatus) counts[order.orderStatus] = (counts[order.orderStatus] || 0) + 1;
         return counts;
@@ -287,23 +300,46 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
         {availableDates.map((value) => {
           const date = new Date(`${value}T00:00:00`);
           const isToday = value === dateKey(new Date());
+          const isSelected = selectedDateFilter === value;
+          const stats = dateStats[value] || { total: 0, pending: 0 };
           return (
             <button
               key={value}
               type="button"
               onClick={() => changeDate(value)}
-              className={`min-w-[74px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
-                selectedDateFilter === value
+              className={`min-w-[82px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
+                isSelected
                   ? 'border-green-700 bg-green-700 text-white shadow-2xs'
                   : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
               }`}
             >
               <span className="block text-[10px] font-bold uppercase">{isToday ? 'Today' : date.toLocaleDateString([], { weekday: 'short' })}</span>
               <span className="block text-xs font-black">{date.toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
+              <span className="mt-1 flex items-center justify-center gap-1">
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
+                  }`}
+                  title="Total orders"
+                >
+                  {stats.total}
+                </span>
+                {stats.pending > 0 && (
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
+                      isSelected ? 'bg-red-400 text-white' : 'bg-red-500 text-white'
+                    }`}
+                    title="Pending / incoming orders"
+                  >
+                    {stats.pending}
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}
       </div>
+
 
       {/* Order Cards */}
       {loading ? (
