@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   Pencil,
   PhoneCall
+  , Loader2
 } from 'lucide-react';
 
 const dateKey = (value) => {
@@ -70,6 +71,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [moreMenuOrderId, setMoreMenuOrderId] = useState(null);
   const [editOrderId, setEditOrderId] = useState(null);
   const [dateStats, setDateStats] = useState({});
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
@@ -192,11 +194,15 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   });
 
   const handleStatusUpdate = async (orderId, nextStatus) => {
+    if (updatingOrderId === orderId) return;
+    setUpdatingOrderId(orderId);
     try {
       await orderService.updateOrderStatus(storeId, orderId, nextStatus);
-      fetchQueue(false);
+      await fetchQueue(false);
     } catch (err) {
       alert(err.message || 'Failed to update order status');
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -480,6 +486,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             const isPending = order.orderStatus === 'PENDING';
             const isModifiable = ['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus);
             const isExpanded = expandedOrderId === order._id;
+            const isUpdating = updatingOrderId === order._id;
             const orderDate = formatOrderDate(order.createdAt);
             const orderTime = formatOrderTime(order.createdAt);
 
@@ -629,10 +636,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                             event.stopPropagation();
                             handleStatusUpdate(order._id, 'ACCEPTED');
                           }}
-                          className="flex-1 py-2.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          disabled={isUpdating}
+                          className="flex-1 py-2.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm disabled:cursor-wait disabled:opacity-70"
                         >
-                          <CheckCircle className="w-4 h-4" />
-                          Accept Order
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                          {isUpdating ? 'Accepting...' : 'Accept Order'}
                         </button>
                       )}
 
@@ -642,10 +650,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                             event.stopPropagation();
                             handleStatusUpdate(order._id, 'PACKING');
                           }}
-                          className="flex-1 py-2.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          disabled={isUpdating}
+                          className="flex-1 py-2.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm disabled:cursor-wait disabled:opacity-70"
                         >
-                          <PackageCheck className="w-4 h-4" />
-                          Start Packing
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackageCheck className="w-4 h-4" />}
+                          {isUpdating ? 'Starting...' : 'Start Packing'}
                         </button>
                       )}
 
@@ -655,10 +664,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                             event.stopPropagation();
                             handleStatusUpdate(order._id, 'READY');
                           }}
-                          className="flex-1 py-2.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          disabled={isUpdating}
+                          className="flex-1 py-2.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm disabled:cursor-wait disabled:opacity-70"
                         >
-                          <CheckCheck className="w-4 h-4" />
-                          Mark Ready
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+                          {isUpdating ? 'Updating...' : 'Mark Ready'}
                         </button>
                       )}
 
@@ -668,10 +678,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                             event.stopPropagation();
                             handleStatusUpdate(order._id, 'COMPLETED');
                           }}
-                          className="flex-1 py-2.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          disabled={isUpdating}
+                          className="flex-1 py-2.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm disabled:cursor-wait disabled:opacity-70"
                         >
-                          <CheckCircle className="w-4 h-4" />
-                          Complete Order
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                          {isUpdating ? 'Completing...' : 'Complete Order'}
                         </button>
                       )}
 
