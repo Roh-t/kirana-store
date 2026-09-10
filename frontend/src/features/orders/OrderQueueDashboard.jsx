@@ -70,6 +70,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [moreMenuOrderId, setMoreMenuOrderId] = useState(null);
   const [editOrderId, setEditOrderId] = useState(null);
   const [dateStats, setDateStats] = useState({});
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
 
   const filteredOrders = orders;
 
@@ -174,10 +179,17 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const changeDate = (value) => {
     setSelectedDateFilter(value);
     setCurrentPage(1);
+    setCalendarOpen(false);
   };
 
   const todayKey = dateKey(new Date());
   const recentDates = availableDates.filter((value) => value !== todayKey).slice(0, 6);
+  const calendarDaysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
+  const calendarStartDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
+  const calendarDays = Array.from({ length: calendarStartDay + calendarDaysInMonth }, (_, index) => {
+    if (index < calendarStartDay) return null;
+    return new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), index - calendarStartDay + 1);
+  });
 
   const handleStatusUpdate = async (orderId, nextStatus) => {
     try {
@@ -368,20 +380,81 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
           );
         })}
 
-        <label
-          className="relative flex h-[54px] min-w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100"
-          title="Choose another date"
-        >
-          <CalendarRange className="h-4 w-4" />
-          <input
-            type="date"
-            value={selectedDateFilter}
-            max={todayKey}
-            onChange={(event) => event.target.value && changeDate(event.target.value)}
-            className="absolute inset-0 cursor-pointer opacity-0"
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setCalendarMonth(new Date(`${selectedDateFilter}T00:00:00`));
+              setCalendarOpen((open) => !open);
+            }}
+            className="flex h-[54px] min-w-[46px] items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100"
+            title="Choose another date"
             aria-label="Choose order history date"
-          />
-        </label>
+            aria-expanded={calendarOpen}
+          >
+            <CalendarRange className="h-4 w-4" />
+          </button>
+
+          {calendarOpen && (
+            <div className="absolute right-0 top-full z-30 mt-2 w-[272px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+              <div className="mb-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                  className="rounded-lg p-1 text-gray-600 hover:bg-gray-100"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-extrabold text-gray-800">
+                  {calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  type="button"
+                  disabled={calendarMonth.getFullYear() === new Date().getFullYear() && calendarMonth.getMonth() === new Date().getMonth()}
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                  className="rounded-lg p-1 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-gray-400">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => <span key={day}>{day}</span>)}
+              </div>
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {calendarDays.map((date, index) => {
+                  if (!date) return <span key={`empty-${index}`} className="h-9" />;
+                  const value = dateKey(date);
+                  const stats = dateStats[value] || { total: 0, pending: 0 };
+                  const isFuture = value > todayKey;
+                  const isSelected = value === selectedDateFilter;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={isFuture}
+                      onClick={() => changeDate(value)}
+                      className={`relative flex h-9 flex-col items-center justify-center rounded-lg text-[11px] font-bold transition ${
+                        isSelected ? 'bg-green-700 text-white' : 'text-gray-700 hover:bg-green-50'
+                      } ${isFuture ? 'cursor-not-allowed text-gray-300 hover:bg-transparent' : ''}`}
+                    >
+                      <span>{date.getDate()}</span>
+                      <span className="flex h-1.5 items-center gap-0.5">
+                        {stats.total > 0 && <span className={`h-1 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} />}
+                        {stats.pending > 0 && <span className="h-1 w-1 rounded-full bg-red-500" />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-3 border-t border-gray-100 pt-2 text-[9px] font-semibold text-gray-500">
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Total orders</span>
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Pending</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
 
