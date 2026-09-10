@@ -176,6 +176,9 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
     setCurrentPage(1);
   };
 
+  const todayKey = dateKey(new Date());
+  const recentDates = availableDates.filter((value) => value !== todayKey).slice(0, 6);
+
   const handleStatusUpdate = async (orderId, nextStatus) => {
     try {
       await orderService.updateOrderStatus(storeId, orderId, nextStatus);
@@ -297,9 +300,35 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" aria-label="Order history dates">
-        {availableDates.map((value) => {
+        <button
+          type="button"
+          onClick={() => changeDate(todayKey)}
+          className={`min-w-[82px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
+            selectedDateFilter === todayKey
+              ? 'border-green-700 bg-green-700 text-white shadow-2xs'
+              : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <span className="block text-[10px] font-bold uppercase">Today</span>
+          <span className="block text-xs font-black">
+            {new Date(`${todayKey}T00:00:00`).toLocaleDateString([], { day: '2-digit', month: 'short' })}
+          </span>
+          <span className="mt-1 flex items-center justify-center gap-1">
+            <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
+              selectedDateFilter === todayKey ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              {(dateStats[todayKey] || { total: 0 }).total}
+            </span>
+            {(dateStats[todayKey] || { pending: 0 }).pending > 0 && (
+              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
+                {(dateStats[todayKey] || { pending: 0 }).pending}
+              </span>
+            )}
+          </span>
+        </button>
+
+        {recentDates.map((value) => {
           const date = new Date(`${value}T00:00:00`);
-          const isToday = value === dateKey(new Date());
           const isSelected = selectedDateFilter === value;
           const stats = dateStats[value] || { total: 0, pending: 0 };
           return (
@@ -313,7 +342,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                   : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="block text-[10px] font-bold uppercase">{isToday ? 'Today' : date.toLocaleDateString([], { weekday: 'short' })}</span>
+              <span className="block text-[10px] font-bold uppercase">{date.toLocaleDateString([], { weekday: 'short' })}</span>
               <span className="block text-xs font-black">{date.toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
               <span className="mt-1 flex items-center justify-center gap-1">
                 <span
@@ -338,6 +367,21 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             </button>
           );
         })}
+
+        <label
+          className="relative flex h-[54px] min-w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100"
+          title="Choose another date"
+        >
+          <CalendarRange className="h-4 w-4" />
+          <input
+            type="date"
+            value={selectedDateFilter}
+            max={todayKey}
+            onChange={(event) => event.target.value && changeDate(event.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+            aria-label="Choose order history date"
+          />
+        </label>
       </div>
 
 
