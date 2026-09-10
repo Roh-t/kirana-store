@@ -73,6 +73,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [dateStats, setDateStats] = useState({});
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const dateStripRef = useRef(null);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -166,6 +167,11 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   }, [storeId, selectedStatus, currentPage, selectedDateFilter]);
 
   useEffect(() => {
+    const selectedDateButton = dateStripRef.current?.querySelector(`[data-date="${selectedDateFilter}"]`);
+    selectedDateButton?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [selectedDateFilter, availableDates]);
+
+  useEffect(() => {
     if (!autoRefresh || !storeId) return;
     const interval = setInterval(() => {
       fetchQueue(false);
@@ -186,6 +192,9 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
 
   const todayKey = dateKey(new Date());
   const recentDates = availableDates.filter((value) => value !== todayKey).slice(0, 6);
+  const visibleRecentDates = recentDates.includes(selectedDateFilter) || selectedDateFilter === todayKey
+    ? recentDates
+    : [selectedDateFilter, ...recentDates];
   const calendarDaysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
   const calendarStartDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
   const calendarDays = Array.from({ length: calendarStartDay + calendarDaysInMonth }, (_, index) => {
@@ -318,9 +327,10 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       </div>
 
       <div className="flex items-start gap-2" aria-label="Order history dates">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div ref={dateStripRef} className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         <button
           type="button"
+          data-date={todayKey}
           onClick={() => changeDate(todayKey)}
           className={`min-w-[82px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
             selectedDateFilter === todayKey
@@ -346,7 +356,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
           </span>
         </button>
 
-        {recentDates.map((value) => {
+        {visibleRecentDates.map((value) => {
           const date = new Date(`${value}T00:00:00`);
           const isSelected = selectedDateFilter === value;
           const stats = dateStats[value] || { total: 0, pending: 0 };
@@ -354,6 +364,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             <button
               key={value}
               type="button"
+              data-date={value}
               onClick={() => changeDate(value)}
               className={`min-w-[82px] rounded-xl border px-2.5 py-2 text-center transition active:scale-95 ${
                 isSelected
