@@ -16,7 +16,6 @@ import {
   XCircle,
   RefreshCw,
   Eye,
-  Phone,
   User,
   MapPin,
   Receipt,
@@ -28,7 +27,10 @@ import {
   , ChevronLeft,
   ChevronRight,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MoreHorizontal,
+  Pencil,
+  PhoneCall
 } from 'lucide-react';
 
 const dateKey = (value) => {
@@ -63,6 +65,8 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
   const [paymentOrder, setPaymentOrder] = useState(null);
   const [previewOrder, setPreviewOrder] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [moreMenuOrderId, setMoreMenuOrderId] = useState(null);
+  const [editOrderId, setEditOrderId] = useState(null);
 
   const filteredOrders = orders.filter((order) => {
     if (!order?.createdAt) return true;
@@ -444,16 +448,18 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-100 px-3.5 pb-3.5 pt-3">
+                  <div className="px-3.5 pb-3.5 pt-0 -mt-1">
+                    {/* Contact row — phone only (name already shown above), tap-to-call */}
                     <div className="text-xs text-gray-700 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="font-bold flex items-center gap-1 text-gray-900">
-                        <User className="w-3.5 h-3.5 text-gray-400" />
-                        {order.customerDetails.name}
-                      </span>
-                      <span className="font-mono text-gray-500 flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                      <a
+                        href={`tel:${order.customerDetails.phone}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-mono text-emerald-700 flex items-center gap-1 underline decoration-emerald-300 underline-offset-2"
+                        title="Call customer"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
                         {order.customerDetails.phone}
-                      </span>
+                      </a>
                       {order.customerDetails.deliveryAddress && (
                         <span className="text-gray-500 flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-gray-400" />
@@ -462,161 +468,200 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                       )}
                     </div>
 
-                    <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 my-2 text-xs space-y-1.5">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-gray-700">
-                          <span>
-                            {item.quantity}x {item.nameSnapshot} ({item.unitSnapshot})
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">₹{item.lineGrandTotal}</span>
-                            {isModifiable && (
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleRemoveShortageItem(order, item);
-                                }}
-                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                title="Mark item as Out of Stock"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                    {/* Item list — no seam, right-aligned prices, edit moved out of inline delete */}
+                    <div className="mt-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Items</span>
+                        {isModifiable && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setEditOrderId(editOrderId === order._id ? null : order._id);
+                            }}
+                            className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            {editOrderId === order._id ? 'Done' : 'Edit order'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-b-0">
+                            <span className="text-gray-700 pr-2 truncate">
+                              {item.quantity}x {item.nameSnapshot} ({item.unitSnapshot})
+                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="font-bold text-gray-900 text-right tabular-nums w-16">₹{item.lineGrandTotal}</span>
+                              {isModifiable && editOrderId === order._id && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleRemoveShortageItem(order, item);
+                                  }}
+                                  className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                  title="Mark item as Out of Stock"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
-                      <div>
-                        <span className="text-[10px] text-gray-400 block font-medium">Payable Total</span>
-                        <span className="text-sm font-black text-green-700">₹{order.grandTotal}</span>
+                        ))}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-1">
-                        {order.orderStatus === 'PENDING' && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleStatusUpdate(order._id, 'ACCEPTED');
-                            }}
-                            className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Accept
-                          </button>
-                        )}
+                      {/* Subtotal directly under item list, right-aligned */}
+                      <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-200">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Payable Total</span>
+                        <span className="text-sm font-black text-green-700 w-16 text-right tabular-nums">₹{order.grandTotal}</span>
+                      </div>
+                    </div>
 
-                        {order.orderStatus === 'ACCEPTED' && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleStatusUpdate(order._id, 'PACKING');
-                            }}
-                            className="px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                          >
-                            <PackageCheck className="w-3.5 h-3.5" />
-                            Pack
-                          </button>
-                        )}
-
-                        {order.orderStatus === 'PACKING' && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleStatusUpdate(order._id, 'READY');
-                            }}
-                            className="px-3 py-1.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
-                          >
-                            <CheckCheck className="w-3.5 h-3.5" />
-                            Ready
-                          </button>
-                        )}
-
-                        {order.orderStatus === 'READY' && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleStatusUpdate(order._id, 'COMPLETED');
-                            }}
-                            className="px-3 py-1.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Complete
-                          </button>
-                        )}
-
+                    {/* Primary action row */}
+                    <div className="mt-3 flex items-center gap-2">
+                      {order.orderStatus === 'PENDING' && (
                         <button
                           onClick={(event) => {
                             event.stopPropagation();
-                            setPreviewOrder(order);
+                            handleStatusUpdate(order._id, 'ACCEPTED');
                           }}
-                          className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition border border-emerald-200"
-                          title="View PDF Bill"
+                          className="flex-1 py-2.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <CheckCircle className="w-4 h-4" />
+                          Accept Order
                         </button>
+                      )}
 
+                      {order.orderStatus === 'ACCEPTED' && (
                         <button
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleDirectPdfDownload(order);
+                            handleStatusUpdate(order._id, 'PACKING');
                           }}
-                          className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition border border-gray-200"
-                          title="Direct PDF Download"
+                          className="flex-1 py-2.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
                         >
-                          <FileText className="w-3.5 h-3.5 text-gray-700" />
+                          <PackageCheck className="w-4 h-4" />
+                          Start Packing
                         </button>
+                      )}
 
+                      {order.orderStatus === 'PACKING' && (
                         <button
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleSendWhatsAppUpdate(order._id);
+                            handleStatusUpdate(order._id, 'READY');
                           }}
-                          className="p-1.5 bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-300 rounded-xl text-xs font-bold transition"
-                          title="Send WhatsApp Update"
+                          className="flex-1 py-2.5 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
                         >
-                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          <CheckCheck className="w-4 h-4" />
+                          Mark Ready
+                        </button>
+                      )}
+
+                      {order.orderStatus === 'READY' && (
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleStatusUpdate(order._id, 'COMPLETED');
+                          }}
+                          className="flex-1 py-2.5 bg-green-700 active:bg-green-800 text-white rounded-xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Complete Order
+                        </button>
+                      )}
+
+                      {order.paymentStatus !== 'PAID' && (
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPaymentOrder(order);
+                          }}
+                          className="px-3 py-2.5 bg-white text-green-700 border border-green-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap"
+                          title="Show payment QR code"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          Show QR
+                        </button>
+                      )}
+
+                      {/* More menu — secondary utility actions, tucked away from primary action */}
+                      <div className="relative shrink-0">
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setMoreMenuOrderId(moreMenuOrderId === order._id ? null : order._id);
+                          }}
+                          className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition border border-gray-200"
+                          title="More options"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
                         </button>
 
-                        {order.paymentStatus !== 'PAID' && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setPaymentOrder(order);
-                            }}
-                            className="px-2.5 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
+                        {moreMenuOrderId === order._id && (
+                          <div
+                            onClick={(event) => event.stopPropagation()}
+                            className="absolute right-0 z-10 mt-1.5 w-48 rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
                           >
-                            <QrCode className="w-3.5 h-3.5" />
-                            UPI
-                          </button>
-                        )}
-
-                        {['READY', 'COMPLETED'].includes(order.orderStatus) && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleGenerateBill(order._id);
-                            }}
-                            className="p-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold transition"
-                            title="Print Bill"
-                          >
-                            <Receipt className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus) && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              const reason = prompt('Cancellation reason:');
-                              if (reason !== null) handleStatusUpdate(order._id, 'CANCELLED');
-                            }}
-                            className="p-1.5 text-red-500 active:bg-red-50 rounded-lg border border-red-200 transition"
-                            title="Cancel Order"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
+                            <button
+                              onClick={() => {
+                                setPreviewOrder(order);
+                                setMoreMenuOrderId(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                              View PDF Bill
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDirectPdfDownload(order);
+                                setMoreMenuOrderId(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-gray-500" />
+                              Download PDF
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleSendWhatsAppUpdate(order._id);
+                                setMoreMenuOrderId(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                              Send WhatsApp Update
+                            </button>
+                            {['READY', 'COMPLETED'].includes(order.orderStatus) && (
+                              <button
+                                onClick={() => {
+                                  handleGenerateBill(order._id);
+                                  setMoreMenuOrderId(null);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              >
+                                <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                                Print Bill
+                              </button>
+                            )}
+                            {['PENDING', 'ACCEPTED', 'PACKING'].includes(order.orderStatus) && (
+                              <>
+                                <div className="my-1 border-t border-gray-100" />
+                                <button
+                                  onClick={() => {
+                                    const reason = prompt('Cancellation reason:');
+                                    setMoreMenuOrderId(null);
+                                    if (reason !== null) handleStatusUpdate(order._id, 'CANCELLED');
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  Cancel Order
+                                </button>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
