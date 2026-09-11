@@ -66,7 +66,7 @@ export class RazorpayService {
 
     const planLimits = {
       PRO: { maxProducts: 1000, maxStaffUsers: 10 },
-      PREMIUM: { maxProducts: -1, maxStaffUsers: -499}
+      PREMIUM: { maxProducts: -1, maxStaffUsers: -1 }
     };
 
     const limits = planLimits[plan.toUpperCase()] || planLimits.PRO;
@@ -88,7 +88,7 @@ export class RazorpayService {
       storeId,
       orderId: storeId, // SaaS plan payment
       paymentNumber: `PAY-SAAS-${Date.now().toString().slice(-6)}`,
-      amount: plan === 'PREMIUM' ? 499: 999,
+      amount: plan.toUpperCase() === 'PREMIUM' ? 999 : 499,
       method: 'ONLINE',
       status: 'SUCCESS',
       gateway: 'RAZORPAY',

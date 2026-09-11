@@ -94,45 +94,62 @@ export const SubscriptionBanner = ({ storeId }) => {
     products: { current: 7, max: -1 },
     staff: { current: 1, max: -1 }
   };
+  const subscription = data.subscription || {};
+  const plan = subscription.plan || 'FREE';
+  const status = subscription.status || 'TRIAL';
+  const isTrial = status === 'TRIAL' && plan === 'FREE';
+  const isPaidPlan = status === 'ACTIVE' && ['PRO', 'PREMIUM'].includes(plan);
+  const daysLeft = subscription.endDate
+    ? Math.max(0, Math.ceil((new Date(subscription.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const expiryText = subscription.endDate
+    ? new Date(subscription.endDate).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'Not available';
+  const planText = plan === 'PREMIUM' ? 'Premium Plan (₹999)' : plan === 'PRO' ? 'Pro Plan (₹499)' : 'Free Trial';
 
   return (
     <>
       <div className="w-full flex flex-col gap-2.5 mb-2.5">
-        {/* 1. Free Trial Banner */}
+        {/* 1. Current plan and expiry banner */}
         <div className="w-full rounded-[20px] bg-white border border-gray-100 p-3 sm:p-4 shadow-xs relative">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
-                <Crown className="w-5 h-5 fill-amber-400 text-amber-500" />
+              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${isPaidPlan ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
+                <Crown className={`w-5 h-5 ${isPaidPlan ? 'fill-emerald-400 text-emerald-600' : 'fill-amber-400 text-amber-500'}`} />
               </div>
               <div>
-                <div className="text-[9px] font-black uppercase tracking-wider text-gray-400">14-DAY</div>
-                <div className="text-sm sm:text-base font-black text-gray-900 leading-tight">Free Trial</div>
-                <div className="text-[10px] sm:text-xs text-gray-500 font-medium">Explore all premium features</div>
+                <div className="text-[9px] font-black uppercase tracking-wider text-gray-400">
+                  {isTrial ? '14-DAY' : status}
+                </div>
+                <div className="text-sm sm:text-base font-black text-gray-900 leading-tight">{planText}</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                  {isTrial ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your trial` : `Valid until ${expiryText}`}
+                </div>
               </div>
             </div>
 
-            <div className="relative shrink-0">
-              <span className="absolute -top-1.5 left-0 text-[10px] select-none opacity-80 pointer-events-none">✨</span>
+            {(!isPaidPlan || plan === 'PRO') && (
               <button
                 onClick={() => setShowPlanModal(true)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-black transition active:scale-95"
               >
-                <span>Upgrade Now</span>
+                <span>{plan === 'PRO' ? 'Upgrade to ₹999' : 'View Plans'}</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
-            </div>
+            )}
           </div>
 
-          <div className="mt-3">
-            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[45%]" />
+          {isTrial && (
+            <div className="mt-3">
+              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, (daysLeft / 14) * 100))}%` }} />
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] font-bold">
+                <span className="text-gray-900">Trial ends {expiryText}</span>
+                <span className="text-gray-400">Choose a plan before expiry</span>
+              </div>
             </div>
-            <div className="mt-1 flex items-center justify-between text-[10px] font-bold">
-              <span className="text-gray-900">7 days left</span>
-              <span className="text-gray-400">Get Pro for more power</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 2. Usage Stats Grid */}
@@ -210,8 +227,8 @@ export const SubscriptionBanner = ({ storeId }) => {
           </div>
         </div>
 
-        {/* 3. Orange Upgrade Banner */}
-        <div className="w-full rounded-[20px] bg-gradient-to-r from-amber-100/70 via-orange-100/80 to-amber-200/60 border border-orange-200/60 p-3 sm:p-4 shadow-xs flex items-center justify-between gap-2.5">
+        {/* 3. Upgrade Banner */}
+        {(!isPaidPlan || plan === 'PRO') && <div className="w-full rounded-[20px] bg-gradient-to-r from-amber-100/70 via-orange-100/80 to-amber-200/60 border border-orange-200/60 p-3 sm:p-4 shadow-xs flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
               <Zap className="w-4 h-4 fill-white" />
@@ -229,7 +246,7 @@ export const SubscriptionBanner = ({ storeId }) => {
             <span>View Plans</span>
             <ArrowRight className="w-3 h-3" />
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Plan Selection Modal */}

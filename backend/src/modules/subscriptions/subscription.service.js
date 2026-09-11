@@ -22,6 +22,11 @@ export class SubscriptionService {
       });
     }
 
+    if (sub.endDate && sub.endDate <= new Date() && ['TRIAL', 'ACTIVE'].includes(sub.status)) {
+      sub.status = 'EXPIRED';
+      await sub.save();
+    }
+
     const [productCount, staffCount] = await Promise.all([
       Product.countDocuments({ storeId, isDeleted: false }),
       User.countDocuments({ 'roles.storeId': storeId })
@@ -45,7 +50,10 @@ export class SubscriptionService {
   }
 
   static async enforceProductLimit(storeId) {
-    const { usage } = await this.getStoreSubscription(storeId);
+    const { subscription, usage } = await this.getStoreSubscription(storeId);
+    if (subscription.status === 'EXPIRED') {
+      throw ApiError.forbidden('Your subscription has expired. Please choose a plan to continue adding products.');
+    }
     if (usage.products.isLimitReached) {
       throw ApiError.forbidden(
         `Product limit reached (${usage.products.current}/${usage.products.max}). Please upgrade your SaaS plan to add more products.`
@@ -54,7 +62,10 @@ export class SubscriptionService {
   }
 
   static async enforceStaffLimit(storeId) {
-    const { usage } = await this.getStoreSubscription(storeId);
+    const { subscription, usage } = await this.getStoreSubscription(storeId);
+    if (subscription.status === 'EXPIRED') {
+      throw ApiError.forbidden('Your subscription has expired. Please choose a plan to continue adding staff.');
+    }
     if (usage.staff.isLimitReached) {
       throw ApiError.forbidden(
         `Staff account limit reached (${usage.staff.current}/${usage.staff.max}). Please upgrade your SaaS plan to invite more staff.`
