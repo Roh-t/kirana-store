@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Clock, Save, Users, Store as StoreIcon, Power } from 'lucide-react';
+import { Clock, Save, Users, Store as StoreIcon, Power, ChevronDown, ChevronUp } from 'lucide-react';
 import { storeService } from '../../services/storeService';
 
 export const StoreTimingSettings = ({ store, onStoreUpdated }) => {
@@ -12,6 +12,7 @@ export const StoreTimingSettings = ({ store, onStoreUpdated }) => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     setFormData({
@@ -65,17 +66,30 @@ export const StoreTimingSettings = ({ store, onStoreUpdated }) => {
 
   return (
     <section className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs">
-      <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
-        <div className="w-8 h-8 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
-          <Clock className="w-4 h-4" />
+      <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-extrabold text-gray-900">Order Timing</h3>
+            <p className="text-[11px] text-gray-500">Customer completion estimates</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm sm:text-base font-extrabold text-gray-900">Order Timing</h3>
-          <p className="text-[11px] text-gray-500">Customer completion estimates</p>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? 'Hide order timing settings' : 'Show order timing settings'}
+          className="rounded-lg border border-gray-200 bg-gray-50 p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+        >
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
       </div>
 
-      <div className={`mb-4 rounded-xl border p-3 flex items-center justify-between gap-3 ${formData.isAcceptingOrders ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+      {isExpanded && (
+        <>
+          <div className={`mb-4 rounded-xl border p-3 flex items-center justify-between gap-3 ${formData.isAcceptingOrders ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
         <div className="flex items-center gap-2">
           <StoreIcon className={`w-4 h-4 ${formData.isAcceptingOrders ? 'text-green-700' : 'text-amber-700'}`} />
           <div>
@@ -92,15 +106,15 @@ export const StoreTimingSettings = ({ store, onStoreUpdated }) => {
           <Power className="w-3.5 h-3.5" />
           {formData.isAcceptingOrders ? 'Close Shop' : 'Open Shop'}
         </button>
-      </div>
+          </div>
 
-      {message && (
-        <div className={`mb-3 p-2.5 rounded-xl text-xs font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {message.text}
-        </div>
-      )}
+          {message && (
+            <div className={`mb-3 p-2.5 rounded-xl text-xs font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {message.text}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <label className="text-xs font-semibold text-gray-700">
             Preparation per customer (minutes)
@@ -170,7 +184,9 @@ export const StoreTimingSettings = ({ store, onStoreUpdated }) => {
             {submitting ? 'Saving...' : 'Save Timing'}
           </button>
         </div>
-      </form>
+          </form>
+        </>
+      )}
     </section>
   );
 };
