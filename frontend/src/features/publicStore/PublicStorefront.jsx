@@ -5,7 +5,6 @@ import { CartDrawer } from './CartDrawer';
 import { OrderSuccessView } from './OrderSuccessView';
 import { CustomerOrderHistoryModal } from './CustomerOrderHistoryModal';
 import { VoiceOrderAssistant } from '../ai/VoiceOrderAssistant';
-import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight, AlertTriangle, X } from 'lucide-react';
 
 export const PublicStorefront = ({ slug }) => {
@@ -18,7 +17,6 @@ export const PublicStorefront = ({ slug }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAiVoiceOpen, setIsAiVoiceOpen] = useState(false);
   const [quantityDrafts, setQuantityDrafts] = useState({});
-  const [selectedUnits, setSelectedUnits] = useState({});
   const [placedOrder, setPlacedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -195,8 +193,7 @@ export const PublicStorefront = ({ slug }) => {
           catalog.map((product) => {
             const qty = items[product._id]?.quantity || 0;
             const hasDiscount = product.mrp > product.sellingPrice;
-            const displayUnit = selectedUnits[product._id] || product.unit;
-            const displayQuantity = convertFromBaseQuantity(qty, displayUnit, product.unit);
+            const packLabel = `${product.unitQuantity || 1} ${product.unit}`;
 
             return (
               <div
@@ -242,25 +239,25 @@ export const PublicStorefront = ({ slug }) => {
                   ) : (
                     <div className="flex items-center bg-green-600 text-white rounded-xl shadow-2xs">
                       <button
-                        onClick={() => updateQuantity(product, -convertToBaseQuantity(1, displayUnit, product.unit))}
+                        onClick={() => updateQuantity(product, -1)}
                         className="shrink-0 p-2 active:bg-green-700 rounded-l-xl transition"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
                       <input
                         type="text"
-                        inputMode="decimal"
-                        min="0.001"
-                        step="0.001"
-                        value={quantityDrafts[product._id] ?? displayQuantity}
-                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
+                        inputMode="numeric"
+                        min="1"
+                        step="1"
+                        value={quantityDrafts[product._id] ?? qty}
+                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(qty) }))}
                         onChange={(event) => {
-                          if (/^\d*\.?\d*$/.test(event.target.value)) {
+                          if (/^\d*$/.test(event.target.value)) {
                             setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                           }
                         }}
                         onBlur={(event) => {
-                          setQuantity(product, convertToBaseQuantity(event.target.value, displayUnit, product.unit));
+                          setQuantity(product, Number(event.target.value));
                           setQuantityDrafts((prev) => {
                             const next = { ...prev };
                             delete next[product._id];
@@ -268,28 +265,12 @@ export const PublicStorefront = ({ slug }) => {
                           });
                         }}
                         onClick={(event) => event.stopPropagation()}
-                        aria-label={`Quantity for ${product.name}`}
+                        aria-label={`Number of ${packLabel} packs for ${product.name}`}
                         className="min-w-0 flex-1 w-8 bg-transparent text-center text-xs font-black outline-none"
                       />
-                      <select
-                        value={displayUnit}
-                        onChange={(event) => {
-                          const nextUnit = event.target.value;
-                          setSelectedUnits((prev) => ({ ...prev, [product._id]: nextUnit }));
-                          setQuantityDrafts((prev) => ({
-                            ...prev,
-                            [product._id]: String(convertFromBaseQuantity(qty, nextUnit, product.unit))
-                          }));
-                        }}
-                        aria-label={`Unit for ${product.name}`}
-                        className="w-12 shrink-0 bg-green-700 text-white border border-green-400 rounded-md px-0.5 py-1 text-[10px] font-black outline-none cursor-pointer"
-                      >
-                        {getQuantityUnitOptions(product.unit).map(({ unit }) => (
-                          <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
-                        ))}
-                      </select>
+                      <span className="shrink-0 text-[10px] font-black whitespace-nowrap">x {packLabel}</span>
                       <button
-                        onClick={() => updateQuantity(product, convertToBaseQuantity(1, displayUnit, product.unit))}
+                        onClick={() => updateQuantity(product, 1)}
                         className="shrink-0 p-2 active:bg-green-700 rounded-r-xl transition"
                       >
                         <Plus className="w-3.5 h-3.5" />
