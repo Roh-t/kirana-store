@@ -6,7 +6,7 @@ export const StaffManager = ({ storeId }) => {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '', roleName: 'CASHIER' });
+  const [formData, setFormData] = useState({ name: '', phone: '', roleName: '' });
   const [error, setError] = useState(null);
 
   const fetchStaff = async () => {
@@ -34,7 +34,7 @@ export const StaffManager = ({ storeId }) => {
     try {
       await staffService.addStaff(storeId, formData);
       setShowModal(false);
-      setFormData({ name: '', phone: '', roleName: 'CASHIER' });
+      setFormData({ name: '', phone: '', roleName: '' });
       fetchStaff();
     } catch (err) {
       const detailMsg = err.details && err.details.length > 0 ? err.details[0].message : null;
@@ -154,15 +154,14 @@ export const StaffManager = ({ storeId }) => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Assign Role</label>
-                <select
+                <input
+                  type="text"
+                  required
                   value={formData.roleName}
                   onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white font-bold"
-                >
-                  <option value="CASHIER">CASHIER (Process Queue & Accept Payments)</option>
-                  <option value="BILLING_STAFF">BILLING STAFF (POS & Thermal Printing)</option>
-                  <option value="STORE_MANAGER">STORE MANAGER (Catalog & Inventory Edit)</option>
-                </select>
+                  placeholder="Enter role"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">

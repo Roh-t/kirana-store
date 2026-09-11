@@ -21,9 +21,9 @@ export class StaffValidator {
       errors.push({ field: 'phone', message: 'Please provide a valid 10-digit Indian mobile number' });
     }
 
-    const validRoles = ['STORE_MANAGER', 'BILLING_STAFF', 'CASHIER'];
-    if (!data.roleName || !validRoles.includes(data.roleName.toUpperCase())) {
-      errors.push({ field: 'roleName', message: `Role must be one of: ${validRoles.join(', ')}` });
+    const roleName = typeof data.roleName === 'string' ? data.roleName.trim() : '';
+    if (roleName.length < 2 || roleName.length > 50) {
+      errors.push({ field: 'roleName', message: 'Role must be between 2 and 50 characters long' });
     }
 
     if (errors.length > 0) {
@@ -33,7 +33,7 @@ export class StaffValidator {
     return {
       name: data.name.trim(),
       phone: normalizedPhone,
-      roleName: data.roleName.toUpperCase()
+      roleName: roleName.toUpperCase()
     };
   }
 }
