@@ -658,7 +658,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                     </div>
 
                     {/* Primary action row */}
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3 flex items-center justify-end gap-2">
                       {order.orderStatus === 'PENDING' && (
                         <button
                           onClick={(event) => {
