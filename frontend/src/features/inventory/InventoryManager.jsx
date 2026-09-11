@@ -82,6 +82,12 @@ export const InventoryManager = ({ storeId }) => {
     }
   };
 
+  const applySummaryFilter = (filter) => {
+    setStockFilter(filter);
+    setCurrentPage(1);
+    setShowSummary(false);
+  };
+
   const openAdjustModal = (item, defaultType = 'PURCHASE') => {
     setSelectedItem(item);
     setType(defaultType);
@@ -208,18 +214,33 @@ export const InventoryManager = ({ storeId }) => {
                 <p className="text-[10px] text-gray-500">Total items</p>
                 <p className="text-sm font-black text-gray-900">{summary.totalStock}</p>
               </div>
-              <div>
+              <button
+                type="button"
+                onClick={() => applySummaryFilter('LOW')}
+                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                title="Show items that need restocking"
+              >
                 <p className="text-[10px] text-gray-500">Restock needed</p>
                 <p className="text-sm font-black text-amber-700">{summary.restockNeeded} items</p>
-              </div>
-              <div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applySummaryFilter('LOW')}
+                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                title="Show low-stock products"
+              >
                 <p className="text-[10px] text-gray-500">Low stock</p>
                 <p className="text-sm font-black text-amber-700">{summary.lowStock} products</p>
-              </div>
-              <div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applySummaryFilter('OUT')}
+                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                title="Show out-of-stock products"
+              >
                 <p className="text-[10px] text-gray-500">Out of stock</p>
                 <p className="text-sm font-black text-red-600">{summary.outOfStock} products</p>
-              </div>
+              </button>
             </div>
           ) : null}
         </div>
