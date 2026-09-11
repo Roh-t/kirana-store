@@ -324,8 +324,10 @@ export const PublicStorefront = ({ slug }) => {
                   {product.regionalName && (
                     <p className="text-xs font-semibold text-green-700 mt-0.5">{product.regionalName}</p>
                   )}
-                  {product.categoryId?.name && (
-                    <p className="text-[10px] font-semibold text-gray-500 mt-0.5">{product.categoryId.name}</p>
+                  {product.categoryName && (
+                    <p className="mt-1 inline-flex max-w-full items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
+                      {product.categoryName}
+                    </p>
                   )}
                   <p className="text-[11px] text-gray-400 mt-0.5">
                     {product.unitQuantity} {product.unit}

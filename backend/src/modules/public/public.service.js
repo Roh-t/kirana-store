@@ -71,6 +71,7 @@ export class PublicService {
       const stock = stockMap.get(p._id.toString()) ?? 0;
       return {
         ...p.toObject(),
+        categoryName: p.categoryId?.name || null,
         stockQuantity: stock,
         inStock: stock > 0
       };
