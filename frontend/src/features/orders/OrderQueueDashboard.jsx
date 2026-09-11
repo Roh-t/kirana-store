@@ -132,9 +132,10 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
       const perDateStats = allOrders.reduce((stats, order) => {
         if (!order?.createdAt) return stats;
         const key = dateKey(order.createdAt);
-        if (!stats[key]) stats[key] = { total: 0, pending: 0 };
+        if (!stats[key]) stats[key] = { total: 0, pending: 0, completed: 0 };
         stats[key].total += 1;
         if (order.orderStatus === 'PENDING') stats[key].pending += 1;
+        if (order.orderStatus === 'COMPLETED') stats[key].completed += 1;
         return stats;
       }, {});
       setDateStats(perDateStats);
@@ -353,13 +354,18 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                 {(dateStats[todayKey] || { pending: 0 }).pending}
               </span>
             )}
+            {(dateStats[todayKey] || { completed: 0 }).completed > 0 && (
+              <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-700">
+                {(dateStats[todayKey] || { completed: 0 }).completed}
+              </span>
+            )}
           </span>
         </button>
 
         {visibleRecentDates.map((value) => {
           const date = new Date(`${value}T00:00:00`);
           const isSelected = selectedDateFilter === value;
-          const stats = dateStats[value] || { total: 0, pending: 0 };
+          const stats = dateStats[value] || { total: 0, pending: 0, completed: 0 };
           return (
             <button
               key={value}
@@ -391,6 +397,16 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                     title="Pending / incoming orders"
                   >
                     {stats.pending}
+                  </span>
+                )}
+                {stats.completed > 0 && (
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
+                      isSelected ? 'bg-blue-300 text-blue-950' : 'bg-blue-100 text-blue-700'
+                    }`}
+                    title="Completed orders"
+                  >
+                    {stats.completed}
                   </span>
                 )}
               </span>
@@ -446,7 +462,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                 {calendarDays.map((date, index) => {
                   if (!date) return <span key={`empty-${index}`} className="h-9" />;
                   const value = dateKey(date);
-                  const stats = dateStats[value] || { total: 0, pending: 0 };
+                  const stats = dateStats[value] || { total: 0, pending: 0, completed: 0 };
                   const isFuture = value > todayKey;
                   const isSelected = value === selectedDateFilter;
                   return (
@@ -463,6 +479,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                       <span className="flex h-1.5 items-center gap-0.5">
                         {stats.total > 0 && <span className={`h-1 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} />}
                         {stats.pending > 0 && <span className="h-1 w-1 rounded-full bg-red-500" />}
+                        {stats.completed > 0 && <span className={`h-1 w-1 rounded-full ${isSelected ? 'bg-blue-200' : 'bg-blue-500'}`} />}
                       </span>
                     </button>
                   );
@@ -471,6 +488,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
               <div className="mt-2 flex items-center justify-center gap-3 border-t border-gray-100 pt-2 text-[9px] font-semibold text-gray-500">
                 <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Total orders</span>
                 <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Pending</span>
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Completed</span>
               </div>
             </div>
           )}
