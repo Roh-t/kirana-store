@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { storeService } from '../../services/storeService';
-import { Store, MapPin, QrCode, Phone, CheckCircle } from 'lucide-react';
+import { Store, MapPin, QrCode, Phone, CheckCircle, X } from 'lucide-react';
 
-export const CreateStoreModal = ({ onStoreCreated }) => {
+export const CreateStoreModal = ({ onStoreCreated, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -42,8 +42,17 @@ export const CreateStoreModal = ({ onStoreCreated }) => {
   };
 
   return (
-    <div className="w-full max-w-lg bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200">
-      <div className="flex items-center gap-3 mb-6 border-b pb-4 border-gray-100">
+    <div className="w-full max-w-lg bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200 relative">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close setup page"
+        className="absolute right-4 top-4 rounded-lg border border-gray-200 p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
+      <div className="flex items-center gap-3 mb-6 border-b pb-4 border-gray-100 pr-8">
         <div className="w-10 h-10 bg-green-100 text-green-700 rounded-xl flex items-center justify-center">
           <Store className="w-5 h-5" />
         </div>

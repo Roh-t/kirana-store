@@ -50,6 +50,14 @@ function DashboardView() {
 
   const isSuperAdmin = user?.roles?.some((role) => (role.roleId?.name || role.roleId) === 'SUPER_ADMIN');
 
+  const handleCloseCreateStore = () => {
+    setIsCreatingNewBranch(false);
+
+    if (stores.length > 0) {
+      setActiveStore(stores[0]);
+    }
+  };
+
   const fetchStores = async () => {
     try {
       setLoading(true);
@@ -149,14 +157,26 @@ function DashboardView() {
 
       {activeTab === 'SUPER_ADMIN' && isSuperAdmin ? (
         <SuperAdminDashboard />
-      ) : isCreatingNewBranch || !activeStore ? (
+      ) : isCreatingNewBranch ? (
         <CreateStoreModal
+          onClose={handleCloseCreateStore}
           onStoreCreated={(newStore) => {
             setActiveStore(newStore);
             setIsCreatingNewBranch(false);
             fetchStores();
           }}
         />
+      ) : !activeStore ? (
+        <div className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center">
+          <p className="text-base font-bold text-gray-900">No store selected</p>
+          <p className="mt-2 text-xs text-gray-500">Create a store workspace to get started.</p>
+          <button
+            onClick={() => setIsCreatingNewBranch(true)}
+            className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+          >
+            Create Store
+          </button>
+        </div>
       ) : (
         <div className="w-full space-y-3">
           {/* Desktop Tab Bar */}
