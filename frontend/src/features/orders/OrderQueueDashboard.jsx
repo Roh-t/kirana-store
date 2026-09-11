@@ -343,7 +343,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
           <span className="block text-xs font-black">
             {new Date(`${todayKey}T00:00:00`).toLocaleDateString([], { day: '2-digit', month: 'short' })}
           </span>
-          <span className="mt-1 flex items-center justify-center gap-1">
+          <span className="mt-1 flex min-h-[18px] w-full flex-wrap items-center justify-center gap-1">
             <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
               selectedDateFilter === todayKey ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
             }`}>
@@ -380,7 +380,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
             >
               <span className="block text-[10px] font-bold uppercase">{date.toLocaleDateString([], { weekday: 'short' })}</span>
               <span className="block text-xs font-black">{date.toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
-              <span className="mt-1 flex items-center justify-center gap-1">
+              <span className="mt-1 flex min-h-[18px] w-full flex-wrap items-center justify-center gap-1">
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
                     isSelected ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
@@ -485,7 +485,7 @@ export const OrderQueueDashboard = ({ storeId, store }) => {
                   );
                 })}
               </div>
-              <div className="mt-2 flex items-center justify-center gap-3 border-t border-gray-100 pt-2 text-[9px] font-semibold text-gray-500">
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-gray-100 pt-2 text-[9px] font-semibold text-gray-500">
                 <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Total orders</span>
                 <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Pending</span>
                 <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Completed</span>
