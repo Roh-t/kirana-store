@@ -5,8 +5,10 @@ import { CartDrawer } from './CartDrawer';
 import { OrderSuccessView } from './OrderSuccessView';
 import { CustomerOrderHistoryModal } from './CustomerOrderHistoryModal';
 import { VoiceOrderAssistant } from '../ai/VoiceOrderAssistant';
+import { useAuth } from '../../context/AuthContext';
+import { storeService } from '../../services/storeService';
 import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
-import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight, AlertTriangle, X } from 'lucide-react';
+import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight, AlertTriangle, X, Camera, ImagePlus } from 'lucide-react';
 
 export const PublicStorefront = ({ slug }) => {
   const [store, setStore] = useState(null);
@@ -23,8 +25,12 @@ export const PublicStorefront = ({ slug }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showClosedNotice, setShowClosedNotice] = useState(true);
+  const [showStoreLogo, setShowStoreLogo] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = React.useRef(null);
 
   const { items, totalItemsCount, subTotal, updateQuantity, setQuantity } = useCart();
+  const { user } = useAuth();
 
   const loadStorefront = async () => {
     try {
@@ -53,6 +59,48 @@ export const PublicStorefront = ({ slug }) => {
   const nextOpeningLabel = store?.availability?.nextOpeningAt
     ? new Date(store.availability.nextOpeningAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
     : 'the next scheduled opening';
+  const isStoreOwner = Boolean(
+    user &&
+    store &&
+    (
+      String(user._id || user.id) === String(store.ownerId) ||
+      user.roles?.some((role) => (
+        String(role.storeId?._id || role.storeId) === String(store._id) &&
+        (role.roleId?.name || role.roleId) === 'STORE_OWNER'
+      ))
+    )
+  );
+
+  const handleLogoChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please choose an image file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Please choose an image smaller than 2 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        setUploadingLogo(true);
+        const res = await storeService.updateStore(store._id, { logoUrl: reader.result });
+        setStore((currentStore) => ({ ...currentStore, ...res.data }));
+        setShowStoreLogo(true);
+      } catch (uploadError) {
+        alert(uploadError.message || 'Failed to update store picture.');
+      } finally {
+        setUploadingLogo(false);
+      }
+    };
+    reader.onerror = () => alert('Failed to read the selected image.');
+    reader.readAsDataURL(file);
+  };
 
   if (placedOrder) {
     return <OrderSuccessView order={placedOrder} onBackToStore={() => setPlacedOrder(null)} />;
@@ -109,9 +157,32 @@ export const PublicStorefront = ({ slug }) => {
         <div className="max-w-md mx-auto p-3.5 sm:p-4">
           <div className="flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-11 h-11 bg-green-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-xs shrink-0">
-                {store?.name?.charAt(0)}
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowStoreLogo(true)}
+                className="group relative w-11 h-11 bg-green-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-xs shrink-0 overflow-hidden"
+                title="View store picture"
+              >
+                {store?.logoUrl ? (
+                  <img src={store.logoUrl} alt={`${store.name} logo`} className="h-full w-full object-cover" />
+                ) : (
+                  store?.name?.charAt(0)
+                )}
+                {isStoreOwner && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition group-hover:opacity-100">
+                    <Camera className="h-4 w-4" />
+                  </span>
+                )}
+              </button>
+              {isStoreOwner && (
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <h1 className="text-base font-extrabold text-gray-900 truncate leading-tight">{store?.name}</h1>
                 <p className="text-[11px] text-gray-500 flex items-center gap-0.5 truncate mt-0.5">
@@ -182,6 +253,40 @@ export const PublicStorefront = ({ slug }) => {
           )}
         </div>
       </header>
+
+      {showStoreLogo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-5">
+          <div className="relative w-full max-w-sm rounded-3xl bg-white p-4 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setShowStoreLogo(false)}
+              aria-label="Close store picture"
+              className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-1.5 text-gray-500 shadow hover:text-gray-900"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-green-50 text-7xl font-black text-green-700">
+              {store?.logoUrl ? (
+                <img src={store.logoUrl} alt={`${store.name} logo`} className="h-full w-full object-contain" />
+              ) : (
+                store?.name?.charAt(0)
+              )}
+            </div>
+            <p className="mt-3 text-center text-sm font-bold text-gray-900">{store?.name}</p>
+            {isStoreOwner && (
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
+              >
+                <ImagePlus className="h-4 w-4" />
+                {uploadingLogo ? 'Uploading...' : store?.logoUrl ? 'Change Store Picture' : 'Upload Store Picture'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Product Catalog */}
       <main className="max-w-6xl mx-auto px-3.5 pb-4 pt-5 sm:px-4 sm:pt-6 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
