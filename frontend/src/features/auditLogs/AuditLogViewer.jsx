@@ -48,6 +48,9 @@ export const AuditLogViewer = ({ storeId }) => {
       return getLocalDateString(date);
     })
   ), []);
+  const visibleDates = useMemo(() => (
+    [...new Set([...recentDates, selectedDate])].sort((a, b) => b.localeCompare(a))
+  ), [recentDates, selectedDate]);
 
   const groupedLogs = useMemo(() => {
     const grouped = logs.reduce((acc, log) => {
@@ -126,7 +129,7 @@ export const AuditLogViewer = ({ storeId }) => {
 
       <div className="mb-4 flex items-center gap-2 border-b border-[#f1dca0] pb-3">
         <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1">
-          {recentDates.map((date) => {
+          {visibleDates.map((date) => {
             const isSelected = selectedDate === date;
             const dateValue = new Date(`${date}T12:00:00`);
 
