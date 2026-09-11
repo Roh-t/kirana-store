@@ -10,6 +10,8 @@ const masterProductSchema = new mongoose.Schema(
     alias: { type: String, trim: true, default: null },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'MasterCategory', required: true, index: true },
     categoryName: { type: String, required: true, trim: true },
+    unit: { type: String, enum: ['KG', 'GRAM', 'LITRE', 'ML', 'PIECE', 'PACKET', 'DOZEN'], default: 'KG' },
+    unitQuantity: { type: Number, min: 0.001, default: 1 },
     sellingPrice: { type: Number, required: true, min: 0 },
     mrp: { type: Number, required: true, min: 0 },
     isActive: { type: Boolean, default: true, index: true }

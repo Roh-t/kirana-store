@@ -10,7 +10,7 @@ const SOURCE = 'ZEPTO';
 const BATCH_SIZE = 500;
 const inputPath = process.argv[2];
 
-const requiredHeaders = ['Image', 'Name', 'Price', 'Original Price', 'Alias'];
+const requiredHeaders = ['Image', 'Name', 'Price', 'Original Price', 'Alias', 'Quantity'];
 
 const slugify = (value) => value
   .toLowerCase()
@@ -26,9 +26,26 @@ const parsePrice = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const getSourceKey = ({ imageUrl, name, categoryName, sellingPrice, mrp }) => crypto
+const parseQuantity = (value) => {
+  const match = String(value ?? '').trim().match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|kilogram|kilograms|g|gm|gram|grams|l|litre|litres|liter|liters|ml|millilitre|millilitres|piece|pieces|pc|pcs|packet|packets|pack|dozen|dozens)$/i);
+  if (!match) return { unitQuantity: 1, unit: 'KG' };
+
+  const unit = match[2].toLowerCase();
+  const unitMap = {
+    kg: 'KG', kgs: 'KG', kilogram: 'KG', kilograms: 'KG',
+    g: 'GRAM', gm: 'GRAM', gram: 'GRAM', grams: 'GRAM',
+    l: 'LITRE', litre: 'LITRE', litres: 'LITRE', liter: 'LITRE', liters: 'LITRE',
+    ml: 'ML', millilitre: 'ML', millilitres: 'ML',
+    piece: 'PIECE', pieces: 'PIECE', pc: 'PIECE', pcs: 'PIECE',
+    packet: 'PACKET', packets: 'PACKET', pack: 'PACKET', packs: 'PACKET',
+    dozen: 'DOZEN', dozens: 'DOZEN'
+  };
+  return { unitQuantity: Number(match[1]), unit: unitMap[unit] || 'KG' };
+};
+
+const getSourceKey = ({ imageUrl, name, categoryName, unit, unitQuantity, sellingPrice, mrp }) => crypto
   .createHash('sha256')
-  .update([SOURCE, imageUrl, name.toLowerCase(), categoryName.toLowerCase(), sellingPrice, mrp].join('|'))
+  .update([SOURCE, imageUrl, name.toLowerCase(), categoryName.toLowerCase(), unit, unitQuantity, sellingPrice, mrp].join('|'))
   .digest('hex');
 
 const importCatalog = async () => {
@@ -76,6 +93,7 @@ const importCatalog = async () => {
       const categoryName = cleanText(row.Alias) || 'Uncategorized';
       const sellingPrice = parsePrice(row.Price);
       const mrp = parsePrice(row['Original Price']);
+      const { unit, unitQuantity } = parseQuantity(row.Quantity);
       const category = categoryBySlug.get(slugify(categoryName));
 
       if (!name || sellingPrice === null || mrp === null || !category) {
@@ -83,7 +101,7 @@ const importCatalog = async () => {
         continue;
       }
 
-      const sourceKey = getSourceKey({ imageUrl, name, categoryName, sellingPrice, mrp });
+      const sourceKey = getSourceKey({ imageUrl, name, categoryName, unit, unitQuantity, sellingPrice, mrp });
       operations.push({
         updateOne: {
           filter: { sourceKey },
@@ -96,6 +114,8 @@ const importCatalog = async () => {
               alias: categoryName,
               categoryId: category._id,
               categoryName,
+              unit,
+              unitQuantity,
               sellingPrice,
               mrp,
               isActive: true

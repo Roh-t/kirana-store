@@ -14,7 +14,7 @@ export class MasterCatalogService {
         { categoryName: searchRegex }
       ]
     })
-      .select('name alias categoryId categoryName imageUrl sellingPrice mrp')
+      .select('name alias categoryId categoryName imageUrl unit unitQuantity sellingPrice mrp')
       .sort({ name: 1 })
       .limit(Math.min(Math.max(Number(limit) || 8, 1), 20))
       .lean();

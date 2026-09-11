@@ -355,6 +355,8 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                               name: suggestion.name,
                               regionalName: suggestion.alias || '',
                               categoryId: categories.find((category) => category.name === suggestion.categoryName)?._id || formData.categoryId,
+                              unit: suggestion.unit || formData.unit,
+                              unitQuantity: suggestion.unitQuantity || formData.unitQuantity,
                               mrp: suggestion.mrp,
                               sellingPrice: suggestion.sellingPrice,
                               imageUrl: suggestion.imageUrl || ''
@@ -375,7 +377,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-xs font-bold text-gray-900">{suggestion.name}</span>
                             <span className="block truncate text-[10px] text-gray-500">
-                              {suggestion.categoryName} · ₹{suggestion.sellingPrice}
+                              {suggestion.categoryName} · {suggestion.unitQuantity || 1} {suggestion.unit || 'KG'} · ₹{suggestion.sellingPrice}
                             </span>
                           </span>
                         </button>
