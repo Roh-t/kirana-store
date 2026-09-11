@@ -117,6 +117,38 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     XLSX.writeFile(workbook, 'kirana-catalog-template.xlsx');
   };
 
+  const normalizeImportProduct = (row) => {
+    const value = (...keys) => {
+      const key = Object.keys(row).find((candidate) => keys.some((name) => candidate.toLowerCase().trim() === name.toLowerCase()));
+      return key ? row[key] : '';
+    };
+    const quantityText = String(value('Quantity', 'Pack Size', 'Unit Quantity')).trim();
+    const quantityMatch = quantityText.match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|kilogram|kilograms|g|gm|gram|grams|l|litre|litres|liter|liters|ml|millilitre|millilitres|piece|pieces|pc|pcs|packet|packets|pack|dozen|dozens)?$/i);
+    const quantityUnit = quantityMatch?.[2]?.toLowerCase();
+    const unitMap = {
+      kg: 'KG', kgs: 'KG', kilogram: 'KG', kilograms: 'KG',
+      g: 'GRAM', gm: 'GRAM', gram: 'GRAM', grams: 'GRAM',
+      l: 'LITRE', litre: 'LITRE', litres: 'LITRE', liter: 'LITRE', liters: 'LITRE',
+      ml: 'ML', millilitre: 'ML', millilitres: 'ML',
+      piece: 'PIECE', pieces: 'PIECE', pc: 'PIECE', pcs: 'PIECE',
+      packet: 'PACKET', packets: 'PACKET', pack: 'PACKET',
+      dozen: 'DOZEN', dozens: 'DOZEN'
+    };
+
+    return {
+      name: String(value('Name', 'Product Name')).trim(),
+      regionalName: String(value('Regional Name', 'RegionalName', 'Alias')).trim(),
+      categoryName: String(value('Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
+      unit: unitMap[quantityUnit] || 'PIECE',
+      unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,
+      mrp: value('Original Price', 'MRP'),
+      sellingPrice: value('Price', 'Selling Price'),
+      barcode: String(value('Barcode', 'EAN', 'UPC')).trim(),
+      imageUrl: String(value('Image', 'Image URL', 'ImageUrl')).trim(),
+      taxRate: value('Tax Rate', 'TaxRate') || 0
+    };
+  };
+
   const handleImportFile = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -129,9 +161,12 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
         return sheetName ? XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' }) : [];
       };
       const productsSheet = workbook.SheetNames.find((item) => item.toLowerCase() === 'products') || workbook.SheetNames[0];
+      const rawProducts = productsSheet
+        ? XLSX.utils.sheet_to_json(workbook.Sheets[productsSheet], { defval: '' })
+        : [];
       const nextData = {
         categories: readSheet('Categories'),
-        products: productsSheet ? XLSX.utils.sheet_to_json(workbook.Sheets[productsSheet], { defval: '' }) : []
+        products: rawProducts.map(normalizeImportProduct)
       };
       if (nextData.categories.length === 0 && nextData.products.length === 0) {
         throw new Error('Add rows to the Categories or Products sheet before uploading.');
