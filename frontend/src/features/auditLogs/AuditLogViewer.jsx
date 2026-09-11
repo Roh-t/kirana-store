@@ -49,7 +49,7 @@ export const AuditLogViewer = ({ storeId }) => {
     })
   ), []);
   const visibleDates = useMemo(() => (
-    [...new Set([...recentDates, selectedDate])].sort((a, b) => b.localeCompare(a))
+    [selectedDate, ...recentDates.filter((date) => date !== selectedDate)]
   ), [recentDates, selectedDate]);
 
   const groupedLogs = useMemo(() => {
