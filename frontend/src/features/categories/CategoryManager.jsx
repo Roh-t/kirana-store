@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
-import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown } from 'lucide-react';
+import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [categories, setCategories] = useState([]);
@@ -199,12 +199,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       setImportData({ categories: [], products: [] });
       await fetchCategories();
       onCategoryChanged?.();
-      if (res.data.skippedRows?.length) {
-        setImportResult(res.data);
-      } else {
-        setShowImportModal(false);
-        window.alert(`Imported ${res.data.categoriesCreated} categories and ${res.data.productsCreated} products.`);
-      }
+      setImportResult(res.data);
     } catch (err) {
       const details = err.details?.map((detail) => detail.reason || detail.message).join('; ');
       setImportError(details ? `${err.message}: ${details}` : err.message || 'Import failed. No products were added.');
@@ -348,21 +343,25 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
             {importError && <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl font-medium">{importError}</div>}
             {importResult && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs">
-                <div className="flex items-center justify-between gap-3 p-3">
-                  <p className="font-bold">
-                    Imported {importResult.productsCreated} products
-                  </p>
-                  <span className="shrink-0 rounded-full bg-amber-200/70 px-2 py-1 text-[10px] font-extrabold">
+              <div className="bg-green-50 border border-green-200 text-green-900 rounded-xl text-xs">
+                <div className="flex items-start gap-2.5 p-3">
+                  <CheckCircle2 className="w-5 h-5 shrink-0 text-green-600 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="font-extrabold text-green-900">Import completed</p>
+                    <p className="mt-0.5 text-green-800">
+                      {importResult.productsCreated} products added successfully.
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-green-200/70 px-2 py-1 text-[10px] font-extrabold">
                     {importResult.skippedRows.length} skipped
                   </span>
                 </div>
-                <details className="group border-t border-amber-200">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 font-bold text-amber-800">
+                {importResult.skippedRows.length > 0 && <details className="group border-t border-green-200">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 font-bold text-green-800">
                     <span>View skipped rows</span>
                     <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="max-h-40 space-y-1.5 overflow-y-auto border-t border-amber-200/70 px-3 py-2.5">
+                  <div className="max-h-40 space-y-1.5 overflow-y-auto border-t border-green-200/70 px-3 py-2.5">
                     {importResult.skippedRows.map((item) => (
                       <div key={item.row} className="flex gap-2 leading-4">
                         <strong className="shrink-0">Row {item.row}</strong>
@@ -370,14 +369,30 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
                       </div>
                     ))}
                   </div>
-                </details>
+                </details>}
               </div>
             )}
             <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
-              <button type="button" onClick={() => setShowImportModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl">Cancel</button>
-              <button type="button" onClick={handleBulkImport} disabled={!importFile || isImporting} className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-xl flex items-center gap-1 disabled:opacity-50">
-                {isImporting ? 'Importing...' : <><Upload className="w-3.5 h-3.5" /> Import Catalog</>}
-              </button>
+              {importResult ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                  }}
+                  className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Done
+                </button>
+              ) : (
+                <>
+                  <button type="button" onClick={() => setShowImportModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl">Cancel</button>
+                  <button type="button" onClick={handleBulkImport} disabled={!importFile || isImporting} className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-xl flex items-center gap-1 disabled:opacity-50">
+                    {isImporting ? 'Importing...' : <><Upload className="w-3.5 h-3.5" /> Import Catalog</>}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
