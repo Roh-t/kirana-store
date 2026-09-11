@@ -247,7 +247,11 @@ function DashboardView() {
                 storeId={activeStore._id}
                 onCategoryChanged={() => setCatalogVersion((v) => v + 1)}
               />
-              <ProductManager storeId={activeStore._id} catalogVersion={catalogVersion} />
+              <ProductManager
+                storeId={activeStore._id}
+                catalogVersion={catalogVersion}
+                onCategoryChanged={() => setCatalogVersion((v) => v + 1)}
+              />
             </div>
           )}
 
