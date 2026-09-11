@@ -21,10 +21,33 @@ const getAuditGroupKey = (log) => {
   return `${dateKey}-${actorId}`;
 };
 
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getDateRange = (dateString) => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const start = new Date(year, month - 1, day);
+  const end = new Date(year, month - 1, day + 1);
+  return { from: start.toISOString(), to: end.toISOString() };
+};
+
 export const AuditLogViewer = ({ storeId }) => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedUserId, setExpandedUserId] = useState(null);
+  const today = getLocalDateString();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const recentDates = useMemo(() => (
+    Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      return getLocalDateString(date);
+    })
+  ), []);
 
   const groupedLogs = useMemo(() => {
     const grouped = logs.reduce((acc, log) => {
@@ -66,7 +89,7 @@ export const AuditLogViewer = ({ storeId }) => {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await auditService.getAuditLogs(storeId);
+      const res = await auditService.getAuditLogs(storeId, getDateRange(selectedDate));
       setLogs(res.data);
       setExpandedUserId(null);
     } catch (err) {
@@ -80,7 +103,7 @@ export const AuditLogViewer = ({ storeId }) => {
     if (storeId) {
       fetchLogs();
     }
-  }, [storeId]);
+  }, [storeId, selectedDate]);
 
   return (
     <div className="w-full max-w-5xl mx-auto rounded-[26px] border border-[#f4d58d] bg-[linear-gradient(180deg,#fffdf9_0%,#fffaf1_100%)] p-3 sm:p-4 shadow-[0_16px_38px_rgba(136,96,24,0.08)] ring-1 ring-[#f5e6be]">
@@ -99,6 +122,43 @@ export const AuditLogViewer = ({ storeId }) => {
           <Activity className="h-3.5 w-3.5 text-violet-600" />
           Live Monitor
         </div>
+      </div>
+
+      <div className="mb-4 flex items-center gap-2 border-b border-[#f1dca0] pb-3">
+        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1">
+          {recentDates.map((date) => {
+            const isSelected = selectedDate === date;
+            const dateValue = new Date(`${date}T12:00:00`);
+
+            return (
+              <button
+                key={date}
+                type="button"
+                onClick={() => setSelectedDate(date)}
+                className={`min-w-[58px] rounded-xl border px-2 py-1.5 text-center transition ${
+                  isSelected
+                    ? 'border-violet-300 bg-violet-100 text-violet-800 shadow-sm'
+                    : 'border-[#eedaa3] bg-[#fffaf0] text-stone-600 hover:bg-white'
+                }`}
+              >
+                <span className="block text-[9px] font-semibold uppercase">{dateValue.toLocaleDateString([], { weekday: 'short' })}</span>
+                <span className="block text-xs font-bold">{dateValue.toLocaleDateString([], { day: 'numeric', month: 'short' })}</span>
+              </button>
+            );
+          })}
+        </div>
+        <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-[#eedaa3] bg-[#fffaf0] px-2 py-1.5 text-[10px] font-semibold text-stone-600">
+          <CalendarDays className="h-3.5 w-3.5 text-violet-600" />
+          <span className="sr-only">Choose audit log date</span>
+          <input
+            type="date"
+            value={selectedDate}
+            max={today}
+            onChange={(event) => setSelectedDate(event.target.value)}
+            className="w-[112px] bg-transparent text-[10px] font-semibold outline-none"
+            aria-label="Choose audit log date"
+          />
+        </label>
       </div>
 
       {loading ? (

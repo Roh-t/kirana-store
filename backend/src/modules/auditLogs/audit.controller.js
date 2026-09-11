@@ -4,7 +4,11 @@ import { ApiResponse } from '../../utils/apiResponse.js';
 export class AuditController {
   static async getAuditLogs(req, res, next) {
     try {
-      const logs = await AuditService.getStoreAuditLogs(req.storeId, req.query.limit);
+      const logs = await AuditService.getStoreAuditLogs(req.storeId, {
+        limit: req.query.limit,
+        from: req.query.from,
+        to: req.query.to
+      });
 
       return ApiResponse.success(res, {
         statusCode: 200,

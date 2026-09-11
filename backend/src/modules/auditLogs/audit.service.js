@@ -27,10 +27,18 @@ export class AuditService {
     }
   }
 
-  static async getStoreAuditLogs(storeId, limit = 30) {
-    return AuditLog.find({ storeId })
+  static async getStoreAuditLogs(storeId, { limit = 100, from, to } = {}) {
+    const query = { storeId };
+
+    if (from || to) {
+      query.createdAt = {};
+      if (from) query.createdAt.$gte = new Date(from);
+      if (to) query.createdAt.$lt = new Date(to);
+    }
+
+    return AuditLog.find(query)
       .populate('actorId', 'name phone email')
       .sort({ createdAt: -1 })
-      .limit(Number(limit));
+      .limit(Math.min(Math.max(Number(limit) || 100, 1), 500));
   }
 }
