@@ -217,7 +217,7 @@ export const InventoryManager = ({ storeId }) => {
               <button
                 type="button"
                 onClick={() => applySummaryFilter('LOW')}
-                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                className="text-left rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 -mx-1 cursor-pointer shadow-sm hover:bg-amber-100 transition"
                 title="Show items that need restocking"
               >
                 <p className="text-[10px] text-gray-500">Restock needed</p>
@@ -226,7 +226,7 @@ export const InventoryManager = ({ storeId }) => {
               <button
                 type="button"
                 onClick={() => applySummaryFilter('LOW')}
-                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                className="text-left rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 -mx-1 cursor-pointer shadow-sm hover:bg-amber-100 transition"
                 title="Show low-stock products"
               >
                 <p className="text-[10px] text-gray-500">Low stock</p>
@@ -235,7 +235,7 @@ export const InventoryManager = ({ storeId }) => {
               <button
                 type="button"
                 onClick={() => applySummaryFilter('OUT')}
-                className="text-left rounded-lg px-1 -mx-1 hover:bg-white/70 transition"
+                className="text-left rounded-lg border border-red-200 bg-red-50 px-2 py-1 -mx-1 cursor-pointer shadow-sm hover:bg-red-100 transition"
                 title="Show out-of-stock products"
               >
                 <p className="text-[10px] text-gray-500">Out of stock</p>
