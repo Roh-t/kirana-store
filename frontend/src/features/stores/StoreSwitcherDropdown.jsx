@@ -34,8 +34,12 @@ export const StoreSwitcherDropdown = ({ stores, activeStore, onStoreSwitched, on
         disabled={switching}
         className="w-full flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-white hover:border-emerald-300 hover:shadow-sm rounded-xl border border-gray-200 transition active:scale-[0.99]"
       >
-        <div className="w-9 h-9 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
-          {activeStore?.name?.charAt(0) || 'K'}
+        <div className="w-9 h-9 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-sm shrink-0 overflow-hidden">
+          {activeStore?.logoUrl ? (
+            <img src={activeStore.logoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            activeStore?.name?.charAt(0) || 'K'
+          )}
         </div>
         <div className="text-left min-w-0 flex-1">
           <span className="text-xs font-bold text-gray-900 block leading-tight">{activeStore?.name}</span>

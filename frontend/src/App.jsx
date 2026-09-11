@@ -254,6 +254,10 @@ function DashboardView() {
                 stores={stores}
                 onStoreSwitched={(switchedStore) => setActiveStore(switchedStore)}
                 onOpenCreateStore={() => setIsCreatingNewBranch(true)}
+                onStoreUpdated={(updatedStore) => {
+                  setActiveStore(updatedStore);
+                  fetchStores();
+                }}
               />
               <SubscriptionBanner storeId={activeStore._id} />
             </div>

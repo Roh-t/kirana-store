@@ -1,15 +1,48 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StoreSwitcherDropdown } from './StoreSwitcherDropdown';
-import { Copy, ExternalLink, Check, MapPin, Plus } from 'lucide-react';
+import { Copy, ExternalLink, Check, MapPin, Plus, Camera } from 'lucide-react';
+import { storeService } from '../../services/storeService';
 
-export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOpenCreateStore }) => {
+export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOpenCreateStore, onStoreUpdated }) => {
   const [copied, setCopied] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef(null);
   const publicUrl = `${window.location.origin}/s/${store?.slug}`;
 
   const copyStoreLink = () => {
     navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLogoChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please choose an image file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Please choose an image smaller than 2 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        setUploadingLogo(true);
+        const res = await storeService.updateStore(store._id, { logoUrl: reader.result });
+        onStoreUpdated?.(res.data);
+      } catch (error) {
+        alert(error.message || 'Failed to update store picture.');
+      } finally {
+        setUploadingLogo(false);
+      }
+    };
+    reader.onerror = () => alert('Failed to read the selected image.');
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -29,9 +62,29 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {/* Store Initial Icon */}
-            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-xs shrink-0 border border-white/80">
-              {store?.name?.charAt(0) || 'S'}
-            </div>
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={uploadingLogo}
+              className="group relative w-11 h-11 sm:w-12 sm:h-12 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-xs shrink-0 border border-white/80 overflow-hidden disabled:opacity-70"
+              title="Change store picture"
+            >
+              {store?.logoUrl ? (
+                <img src={store.logoUrl} alt={`${store.name} logo`} className="h-full w-full object-cover" />
+              ) : (
+                store?.name?.charAt(0) || 'S'
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition group-hover:opacity-100">
+                <Camera className="h-4 w-4" />
+              </span>
+            </button>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="hidden"
+            />
 
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
