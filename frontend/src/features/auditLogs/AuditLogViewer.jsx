@@ -160,6 +160,22 @@ export const AuditLogViewer = ({ storeId }) => {
           />
         </label>
       </div>
+      <div className="mb-4 flex items-center justify-between rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2">
+        <p className="text-[11px] font-semibold text-violet-800">
+          Showing audit logs for{' '}
+          {new Date(`${selectedDate}T12:00:00`).toLocaleDateString([], {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })}
+        </p>
+        {selectedDate === today && (
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-700">
+            Today
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-dashed border-[#f1dca0] bg-[#fffaf0] py-10 text-sm text-stone-500">
