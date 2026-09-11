@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoreSwitcherDropdown } from './StoreSwitcherDropdown';
-import { Copy, ExternalLink, Check, MapPin, Settings, Plus } from 'lucide-react';
+import { Copy, ExternalLink, Check, MapPin, Plus } from 'lucide-react';
 
 export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOpenCreateStore }) => {
   const [copied, setCopied] = useState(false);
@@ -69,10 +69,10 @@ export const StoreDashboardHeader = ({ store, stores = [], onStoreSwitched, onOp
               target="_blank"
               rel="noopener noreferrer"
               className="px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-800 rounded-lg text-[11px] font-extrabold transition flex items-center gap-1 shadow-2xs border border-gray-200 active:scale-95"
-              title="Open Customer Storefront"
+              title="View Customer Storefront"
             >
-              <Settings className="w-3 h-3 text-gray-600" />
-              <span>Manage Store</span>
+              <ExternalLink className="w-3 h-3 text-gray-600" />
+              <span>View Storefront</span>
             </a>
           </div>
         </div>
