@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
+import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { orderService } from '../../services/orderService';
 import { buildOwnerNewOrderWhatsAppLink } from '../../utils/whatsappLink';
 import { X, ShoppingBag, Plus, Minus, Trash2, MapPin, Phone, User, Check } from 'lucide-react';
@@ -25,6 +26,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
   const [submitting, setSubmitting] = useState(false);
   const [validationError, setValidationError] = useState(null);
   const [quantityDrafts, setQuantityDrafts] = useState({});
+  const [selectedUnits, setSelectedUnits] = useState({});
 
   if (!isOpen) return null;
 
@@ -138,7 +140,11 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                 {itemList.map(({ product, quantity, lineTotal }) => (
                   (() => {
                     const packLabel = `${product.unitQuantity || 1} ${product.unit}`;
-                    const quantityLabel = product.allowPartialSale ? product.unit : `x ${packLabel}`;
+                    const displayUnit = selectedUnits[product._id] || product.unit;
+                    const displayQuantity = product.allowPartialSale
+                      ? convertFromBaseQuantity(quantity, displayUnit, product.unit)
+                      : quantity;
+                    const quantityLabel = product.allowPartialSale ? displayUnit : `x ${packLabel}`;
 
                     return (
                   <div key={product._id} className="pt-2 pb-2 flex flex-wrap items-center justify-between gap-2">
@@ -163,7 +169,10 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                     <div className="w-full sm:w-auto flex items-center justify-end gap-2">
                       <div className="min-w-0 flex max-w-full items-center bg-gray-100 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(product, -1)}
+                          onClick={() => updateQuantity(
+                            product,
+                            product.allowPartialSale ? -convertToBaseQuantity(1, displayUnit, product.unit) : -1
+                          )}
                           className="shrink-0 p-1.5 text-gray-600 hover:bg-gray-200 rounded-l-lg"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -173,15 +182,20 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           inputMode="numeric"
                           min={product.allowPartialSale ? '0.001' : '1'}
                           step={product.allowPartialSale ? '0.001' : '1'}
-                          value={quantityDrafts[product._id] ?? quantity}
-                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(quantity) }))}
+                          value={quantityDrafts[product._id] ?? displayQuantity}
+                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
                           onChange={(event) => {
                             if (product.allowPartialSale ? /^\d*\.?\d*$/.test(event.target.value) : /^\d*$/.test(event.target.value)) {
                               setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                             }
                           }}
                           onBlur={(event) => {
-                            setQuantity(product, Number(event.target.value));
+                            setQuantity(
+                              product,
+                              product.allowPartialSale
+                                ? convertToBaseQuantity(event.target.value, displayUnit, product.unit)
+                                : Number(event.target.value)
+                            );
                             setQuantityDrafts((prev) => {
                               const next = { ...prev };
                               delete next[product._id];
@@ -191,9 +205,32 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           aria-label={`Quantity in ${product.unit} for ${product.name}`}
                           className="min-w-0 w-8 flex-1 bg-transparent text-center text-[11px] font-bold outline-none"
                         />
-                        <span className="shrink-0 text-[10px] font-black whitespace-nowrap">{quantityLabel}</span>
+                        {product.allowPartialSale ? (
+                          <select
+                            value={displayUnit}
+                            onChange={(event) => {
+                              const nextUnit = event.target.value;
+                              setSelectedUnits((prev) => ({ ...prev, [product._id]: nextUnit }));
+                              setQuantityDrafts((prev) => ({
+                                ...prev,
+                                [product._id]: String(convertFromBaseQuantity(quantity, nextUnit, product.unit))
+                              }));
+                            }}
+                            aria-label={`Quantity unit for ${product.name}`}
+                            className="w-14 shrink-0 bg-white text-green-700 border border-green-200 rounded-md px-0.5 py-1 text-[10px] font-black outline-none cursor-pointer"
+                          >
+                            {getQuantityUnitOptions(product.unit).map(({ unit }) => (
+                              <option key={unit} value={unit} className="bg-white text-gray-900">{unit}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="shrink-0 text-[10px] font-black whitespace-nowrap">{quantityLabel}</span>
+                        )}
                         <button
-                          onClick={() => updateQuantity(product, 1)}
+                          onClick={() => updateQuantity(
+                            product,
+                            product.allowPartialSale ? convertToBaseQuantity(1, displayUnit, product.unit) : 1
+                          )}
                           className="shrink-0 p-1.5 text-gray-600 hover:bg-gray-200 rounded-r-lg"
                         >
                           <Plus className="w-3.5 h-3.5" />
