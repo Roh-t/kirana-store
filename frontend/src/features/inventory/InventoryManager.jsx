@@ -199,10 +199,14 @@ export const InventoryManager = ({ storeId }) => {
           ) : summaryError ? (
             <p className="text-xs text-red-600">{summaryError}</p>
           ) : summary ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <div>
-                <p className="text-[10px] text-gray-500">Stock available</p>
-                <p className="text-sm font-black text-gray-900">{summary.totalStock} items</p>
+                <p className="text-[10px] text-gray-500">Unique items</p>
+                <p className="text-sm font-black text-gray-900">{summary.totalItems}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Total items</p>
+                <p className="text-sm font-black text-gray-900">{summary.totalStock}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500">Restock needed</p>
