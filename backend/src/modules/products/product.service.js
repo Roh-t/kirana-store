@@ -8,6 +8,14 @@ import { SubscriptionService } from '../subscriptions/subscription.service.js';
 import { MasterProduct } from '../masterCatalog/masterProduct.model.js';
 import { ApiError } from '../../utils/apiError.js';
 
+const normalizeImportPrice = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  const normalized = String(value ?? '').replace(/[^0-9.-]/g, '');
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 export class ProductService {
   static async importCatalog(storeId, userId, payload) {
     const categoryRows = Array.isArray(payload?.categories) ? payload.categories : [];
@@ -88,6 +96,8 @@ export class ProductService {
           imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
           unit: row.unit || 'PIECE',
           unitQuantity: row.unitQuantity || 1,
+          mrp: normalizeImportPrice(row.mrp),
+          sellingPrice: normalizeImportPrice(row.sellingPrice),
           purchasePrice: row.purchasePrice || 0,
           taxRate: row.taxRate || 0
         }));

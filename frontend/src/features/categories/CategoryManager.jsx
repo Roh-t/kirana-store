@@ -117,6 +117,14 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     XLSX.writeFile(workbook, 'kirana-catalog-template.xlsx');
   };
 
+  const parseImportPrice = (rawValue) => {
+    if (typeof rawValue === 'number') return Number.isFinite(rawValue) ? rawValue : null;
+    const normalized = String(rawValue ?? '').replace(/[^0-9.-]/g, '');
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const normalizeImportProduct = (row) => {
     const value = (...keys) => {
       const key = Object.keys(row).find((candidate) => keys.some((name) => candidate.toLowerCase().trim() === name.toLowerCase()));
@@ -141,8 +149,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       categoryName: String(value('Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
       unit: unitMap[quantityUnit] || 'PIECE',
       unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,
-      mrp: value('Original Price', 'MRP'),
-      sellingPrice: value('Price', 'Selling Price'),
+      mrp: parseImportPrice(value('Original Price', 'MRP')),
+      sellingPrice: parseImportPrice(value('Price', 'Selling Price')),
       barcode: String(value('Barcode', 'EAN', 'UPC')).trim(),
       imageUrl: String(value('Image', 'Image URL', 'ImageUrl')).trim(),
       taxRate: value('Tax Rate', 'TaxRate') || 0

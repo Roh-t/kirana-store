@@ -23,7 +23,13 @@ export class ProductValidator {
 
     if (data.sellingPrice === undefined || typeof data.sellingPrice !== 'number' || data.sellingPrice < 0) {
       errors.push({ field: 'sellingPrice', message: 'Valid Selling Price is required' });
-    } else if (data.mrp !== undefined && data.sellingPrice > data.mrp) {
+    } else if (
+      typeof data.mrp === 'number' &&
+      Number.isFinite(data.mrp) &&
+      typeof data.sellingPrice === 'number' &&
+      Number.isFinite(data.sellingPrice) &&
+      data.sellingPrice > data.mrp
+    ) {
       errors.push({ field: 'sellingPrice', message: 'Selling Price cannot be greater than MRP' });
     }
 
