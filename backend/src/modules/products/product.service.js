@@ -16,6 +16,18 @@ const normalizeImportPrice = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const getImportProductKey = (product) => {
+  const barcode = String(product.barcode || '').trim().toLowerCase();
+  if (barcode) return `barcode:${barcode}`;
+
+  return [
+    String(product.name || '').trim().toLowerCase(),
+    String(product.categoryId || ''),
+    String(product.unit || '').trim().toUpperCase(),
+    Number(product.unitQuantity) || 1
+  ].join('|');
+};
+
 export class ProductService {
   static async importCatalog(storeId, userId, payload) {
     const categoryRows = Array.isArray(payload?.categories) ? payload.categories : [];
@@ -90,17 +102,20 @@ export class ProductService {
       ).trim();
       const category = ensureCategory(categoryName);
       try {
-        validProducts.push(ProductValidator.validateCreateProduct({
-          ...row,
-          categoryId: category._id,
-          imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
-          unit: row.unit || 'PIECE',
-          unitQuantity: row.unitQuantity || 1,
-          mrp: normalizeImportPrice(row.mrp),
-          sellingPrice: normalizeImportPrice(row.sellingPrice),
-          purchasePrice: row.purchasePrice || 0,
-          taxRate: row.taxRate || 0
-        }));
+        validProducts.push({
+          row: index + 2,
+          product: ProductValidator.validateCreateProduct({
+            ...row,
+            categoryId: category._id,
+            imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
+            unit: row.unit || 'PIECE',
+            unitQuantity: row.unitQuantity || 1,
+            mrp: normalizeImportPrice(row.mrp),
+            sellingPrice: normalizeImportPrice(row.sellingPrice),
+            purchasePrice: row.purchasePrice || 0,
+            taxRate: row.taxRate || 0
+          })
+        });
       } catch (error) {
         const details = error.errors?.map((detail) => detail.message).join('; ') || error.message;
         skippedRows.push({ row: index + 2, reason: details });
@@ -112,21 +127,35 @@ export class ProductService {
       throw ApiError.badRequest('No valid product rows were found', skippedRows);
     }
 
-    if (validatedProducts.length > 0) {
+    const existingProducts = validatedProducts.length > 0
+      ? await Product.find({ storeId, isDeleted: false })
+        .select('name categoryId unit unitQuantity barcode')
+        .lean()
+      : [];
+    const existingProductKeys = new Set(existingProducts.map(getImportProductKey));
+    const importProductKeys = new Set();
+    const newProducts = validatedProducts
+      .filter(({ product, row }) => {
+        const key = getImportProductKey(product);
+        if (existingProductKeys.has(key) || importProductKeys.has(key)) {
+          skippedRows.push({
+            row,
+            reason: 'Duplicate product skipped; it is already in the catalog.'
+          });
+          return false;
+        }
+        importProductKeys.add(key);
+        return true;
+      })
+      .map(({ product }) => product);
+
+    if (newProducts.length > 0) {
       const { usage } = await SubscriptionService.getStoreSubscription(storeId);
-      if (usage.products.max !== -1 && usage.products.current + validatedProducts.length > usage.products.max) {
+      if (usage.products.max !== -1 && usage.products.current + newProducts.length > usage.products.max) {
         throw ApiError.forbidden(
-          `Import exceeds product limit (${usage.products.current + validatedProducts.length}/${usage.products.max}). Please upgrade your plan.`
+          `Import exceeds product limit (${usage.products.current + newProducts.length}/${usage.products.max}). Please upgrade your plan.`
         );
       }
-    }
-
-    const barcodes = validatedProducts.map((product) => product.barcode).filter(Boolean);
-    if (new Set(barcodes).size !== barcodes.length) {
-      throw ApiError.badRequest('Import contains duplicate barcodes');
-    }
-    if (barcodes.length > 0 && await Product.exists({ storeId, barcode: { $in: barcodes }, isDeleted: false })) {
-      throw ApiError.conflict('One or more imported barcodes already exist in this store');
     }
 
     if (categoriesToCreate.length > 0) {
@@ -139,7 +168,7 @@ export class ProductService {
       );
     }
 
-    const productsToCreate = validatedProducts.map((product) => ({
+    const productsToCreate = newProducts.map((product) => ({
       storeId,
       ...product,
       isActive: true,
