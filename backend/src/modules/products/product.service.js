@@ -279,6 +279,7 @@ export class ProductService {
     if (updateData.sku !== undefined) product.sku = updateData.sku;
     if (updateData.unit) product.unit = updateData.unit.toUpperCase();
     if (updateData.unitQuantity !== undefined) product.unitQuantity = Number(updateData.unitQuantity);
+    if (updateData.allowPartialSale !== undefined) product.allowPartialSale = Boolean(updateData.allowPartialSale);
     if (updateData.mrp !== undefined) product.mrp = Number(updateData.mrp);
     if (updateData.sellingPrice !== undefined) product.sellingPrice = Number(updateData.sellingPrice);
     if (updateData.purchasePrice !== undefined) product.purchasePrice = Number(updateData.purchasePrice);
