@@ -16,8 +16,9 @@ export class ProductService {
       throw ApiError.badRequest('The import file has no category or product rows');
     }
 
-    const existingCategories = await Category.find({ storeId, isDeleted: false });
+    const existingCategories = await Category.find({ storeId });
     const categoryByName = new Map(existingCategories.map((category) => [category.name.trim().toLowerCase(), category]));
+    const categoryBySlug = new Map(existingCategories.map((category) => [category.slug.trim().toLowerCase(), category]));
     const productNames = productRows.map((row) => String(row.name || '').trim()).filter(Boolean);
     const masterProducts = productNames.length
       ? await MasterProduct.find({ isActive: true, $or: [{ name: { $in: productNames } }, { alias: { $in: productNames } }] })
@@ -30,29 +31,46 @@ export class ProductService {
       if (product.alias) masterByName.set(product.alias.trim().toLowerCase(), product);
     });
     const categoriesToCreate = [];
-    const seenCategoryNames = new Set();
+    const categoriesToRestore = new Set();
+
+    const ensureCategory = (rawName, details = {}) => {
+      const name = String(rawName || 'General').trim();
+      const key = name.toLowerCase();
+      const slug = CategoryService.generateCategorySlug(name);
+      const existing = categoryByName.get(key) || categoryBySlug.get(slug);
+      if (existing) {
+        categoryByName.set(key, existing);
+        categoryBySlug.set(slug, existing);
+        if (existing.isDeleted) categoriesToRestore.add(existing._id);
+        return existing;
+      }
+
+      const category = {
+        _id: new mongoose.Types.ObjectId(),
+        storeId,
+        name,
+        slug,
+        description: details.description || null,
+        sortOrder: Number(details.sortOrder) || existingCategories.length + categoriesToCreate.length,
+        isActive: true,
+        isDeleted: false
+      };
+      categoriesToCreate.push(category);
+      categoryByName.set(key, category);
+      categoryBySlug.set(slug, category);
+      return category;
+    };
 
     for (const [index, row] of categoryRows.entries()) {
       const name = String(row.name || '').trim();
       if (name.length < 2 || name.length > 50) {
         throw ApiError.badRequest(`Category row ${index + 2}: name must be between 2 and 50 characters`);
       }
-      const key = name.toLowerCase();
-      if (categoryByName.has(key) || seenCategoryNames.has(key)) continue;
-      seenCategoryNames.add(key);
-      categoriesToCreate.push({
-        _id: new mongoose.Types.ObjectId(),
-        storeId,
-        name,
-        slug: CategoryService.generateCategorySlug(name),
+      ensureCategory(name, {
         description: row.description ? String(row.description).trim() : null,
-        sortOrder: Number(row.sortOrder) || existingCategories.length + categoriesToCreate.length,
-        isActive: true,
-        isDeleted: false
+        sortOrder: row.sortOrder
       });
     }
-
-    categoriesToCreate.forEach((category) => categoryByName.set(category.name.trim().toLowerCase(), category));
 
     const skippedRows = [];
     const validatedProducts = productRows.reduce((validProducts, row, index) => {
@@ -62,21 +80,7 @@ export class ProductService {
           ? row.regionalName
           : masterProduct?.categoryName || row.regionalName || 'General')
       ).trim();
-      if (!categoryByName.has(categoryName.toLowerCase())) {
-        const categoryData = {
-          _id: new mongoose.Types.ObjectId(),
-          storeId,
-          name: categoryName,
-          slug: CategoryService.generateCategorySlug(categoryName),
-          description: null,
-          sortOrder: existingCategories.length + categoriesToCreate.length,
-          isActive: true,
-          isDeleted: false
-        };
-        categoriesToCreate.push(categoryData);
-        categoryByName.set(categoryName.toLowerCase(), categoryData);
-      }
-      const category = categoryByName.get(categoryName.toLowerCase());
+      const category = ensureCategory(categoryName);
       try {
         validProducts.push(ProductValidator.validateCreateProduct({
           ...row,
@@ -117,6 +121,12 @@ export class ProductService {
 
     if (categoriesToCreate.length > 0) {
       await Category.insertMany(categoriesToCreate, { ordered: true });
+    }
+    if (categoriesToRestore.size > 0) {
+      await Category.updateMany(
+        { storeId, _id: { $in: [...categoriesToRestore] } },
+        { $set: { isDeleted: false, isActive: true } }
+      );
     }
 
     const productsToCreate = validatedProducts.map((product) => ({
