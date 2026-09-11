@@ -22,7 +22,6 @@ const getImportProductKey = (product) => {
 
   return [
     String(product.name || '').trim().toLowerCase(),
-    String(product.categoryId || ''),
     String(product.unit || '').trim().toUpperCase(),
     Number(product.unitQuantity) || 1
   ].join('|');
@@ -129,18 +128,30 @@ export class ProductService {
 
     const existingProducts = validatedProducts.length > 0
       ? await Product.find({ storeId, isDeleted: false })
-        .select('name categoryId unit unitQuantity barcode')
+        .select('_id name categoryId unit unitQuantity barcode')
         .lean()
       : [];
-    const existingProductKeys = new Set(existingProducts.map(getImportProductKey));
+    const existingProductByKey = new Map(existingProducts.map((product) => [getImportProductKey(product), product]));
     const importProductKeys = new Set();
+    const categoryUpdates = [];
     const newProducts = validatedProducts
       .filter(({ product, row }) => {
         const key = getImportProductKey(product);
-        if (existingProductKeys.has(key) || importProductKeys.has(key)) {
+        const existingProduct = existingProductByKey.get(key);
+        if (existingProduct || importProductKeys.has(key)) {
+          if (existingProduct && String(existingProduct.categoryId) !== String(product.categoryId)) {
+            categoryUpdates.push({
+              updateOne: {
+                filter: { _id: existingProduct._id, storeId, isDeleted: false },
+                update: { $set: { categoryId: product.categoryId, updatedBy: userId } }
+              }
+            });
+          }
           skippedRows.push({
             row,
-            reason: 'Duplicate product skipped; it is already in the catalog.'
+            reason: existingProduct
+              ? 'Already in catalog; category refreshed from Excel.'
+              : 'Duplicate row skipped; product is already included in this import.'
           });
           return false;
         }
@@ -166,6 +177,9 @@ export class ProductService {
         { storeId, _id: { $in: [...categoriesToRestore] } },
         { $set: { isDeleted: false, isActive: true } }
       );
+    }
+    if (categoryUpdates.length > 0) {
+      await Product.bulkWrite(categoryUpdates, { ordered: false });
     }
 
     const productsToCreate = newProducts.map((product) => ({
