@@ -1,6 +1,12 @@
 import apiClient from './apiClient';
 
 export const inventoryService = {
+  async getInventorySummary(storeId) {
+    return apiClient.get('/inventory/summary', {
+      headers: { 'X-Store-Id': storeId }
+    });
+  },
+
   async getInventory(storeId, params = {}) {
     return apiClient.get('/inventory', {
       headers: { 'X-Store-Id': storeId },

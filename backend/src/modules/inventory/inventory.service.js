@@ -4,6 +4,33 @@ import { Product } from '../products/product.model.js';
 import { ApiError } from '../../utils/apiError.js';
 
 export class InventoryService {
+  static async getInventorySummary(storeId) {
+    const records = await Inventory.find({ storeId })
+      .select('stockQuantity reorderPoint')
+      .lean();
+
+    return records.reduce(
+      (summary, record) => {
+        const stockQuantity = Number(record.stockQuantity) || 0;
+        const reorderPoint = Number(record.reorderPoint) || 0;
+
+        summary.totalItems += 1;
+        summary.totalStock += stockQuantity;
+        summary.restockNeeded += Math.max(reorderPoint - stockQuantity, 0);
+
+        if (stockQuantity === 0) {
+          summary.outOfStock += 1;
+        }
+        if (stockQuantity <= reorderPoint) {
+          summary.lowStock += 1;
+        }
+
+        return summary;
+      },
+      { totalItems: 0, totalStock: 0, restockNeeded: 0, lowStock: 0, outOfStock: 0 }
+    );
+  }
+
   static async getInventoryByStore(storeId, filters = {}) {
     const { page = 1, limit = 20, search, stockFilter, stockLimit } = filters;
     const query = { storeId };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
-import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -21,6 +21,10 @@ export const InventoryManager = ({ storeId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
   const [partialSaleSavingId, setPartialSaleSavingId] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
 
   const fetchInventory = async () => {
     try {
@@ -57,6 +61,27 @@ export const InventoryManager = ({ storeId }) => {
     setCurrentPage(1);
   };
 
+  const toggleSummary = async () => {
+    if (showSummary) {
+      setShowSummary(false);
+      return;
+    }
+
+    setShowSummary(true);
+    if (summary || summaryLoading) return;
+
+    try {
+      setSummaryError(null);
+      setSummaryLoading(true);
+      const res = await inventoryService.getInventorySummary(storeId);
+      setSummary(res.data);
+    } catch (err) {
+      setSummaryError(err.message || 'Failed to load stock summary');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   const openAdjustModal = (item, defaultType = 'PURCHASE') => {
     setSelectedItem(item);
     setType(defaultType);
@@ -85,6 +110,7 @@ export const InventoryManager = ({ storeId }) => {
         reason
       });
       setShowModal(false);
+      setSummary(null);
       fetchInventory();
     } catch (err) {
       setError(err.message || 'Failed to update stock');
@@ -146,13 +172,54 @@ export const InventoryManager = ({ storeId }) => {
           </div>
         </div>
 
-        {lowStockCount > 0 && (
-          <div className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            {lowStockCount} Low Stock Alert(s)
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {lowStockCount > 0 && (
+            <div className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              {lowStockCount} Low Stock Alert(s)
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={toggleSummary}
+            className="px-2.5 py-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold flex items-center gap-1 transition"
+            aria-expanded={showSummary}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-green-700" />
+            Summary
+            {showSummary ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
+
+      {showSummary && (
+        <div className="rounded-xl border border-green-100 bg-green-50/60 p-3">
+          {summaryLoading ? (
+            <p className="text-xs text-gray-500">Loading stock summary...</p>
+          ) : summaryError ? (
+            <p className="text-xs text-red-600">{summaryError}</p>
+          ) : summary ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <p className="text-[10px] text-gray-500">Stock available</p>
+                <p className="text-sm font-black text-gray-900">{summary.totalStock} items</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Restock needed</p>
+                <p className="text-sm font-black text-amber-700">{summary.restockNeeded} items</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Low stock</p>
+                <p className="text-sm font-black text-amber-700">{summary.lowStock} products</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Out of stock</p>
+                <p className="text-sm font-black text-red-600">{summary.outOfStock} products</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-2">
         <label className="relative flex-1">

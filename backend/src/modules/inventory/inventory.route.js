@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate);
 router.use(tenantContext);
 
+router.get('/summary', InventoryController.getInventorySummary);
 router.get('/', InventoryController.getInventory);
 router.post('/adjust', InventoryController.adjustStock);
 
