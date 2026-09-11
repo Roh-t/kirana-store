@@ -32,16 +32,16 @@ export const StoreSwitcherDropdown = ({ stores, activeStore, onStoreSwitched, on
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={switching}
-        className="flex items-center gap-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition"
+        className="w-full flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-white hover:border-emerald-300 hover:shadow-sm rounded-xl border border-gray-200 transition active:scale-[0.99]"
       >
-        <div className="w-8 h-8 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">
+        <div className="w-9 h-9 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
           {activeStore?.name?.charAt(0) || 'K'}
         </div>
-        <div className="text-left hidden sm:block">
+        <div className="text-left min-w-0 flex-1">
           <span className="text-xs font-bold text-gray-900 block leading-tight">{activeStore?.name}</span>
           <span className="text-[10px] text-gray-500 block leading-tight">Switch Store Branch</span>
         </div>
-        <ChevronDown className="w-4 h-4 text-gray-400" />
+        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-emerald-600' : ''}`} />
       </button>
 
       {isOpen && (
