@@ -119,7 +119,7 @@ export class InventoryService {
     }
 
     return InventoryTransaction.find(query)
-      .populate('productId', 'name regionalName unit')
+      .populate('productId', 'name regionalName unit unitQuantity')
       .populate('createdBy', 'name')
       .sort({ createdAt: -1 })
       .limit(Number(limit));

@@ -175,6 +175,10 @@ export const InventoryManager = ({ storeId }) => {
           {filteredInventory.map((inv) => {
             const product = inv.productId;
             const isLow = inv.stockQuantity <= inv.reorderPoint;
+            const packSize = Number(product?.unitQuantity) || 1;
+            const unit = product?.unit || 'UNIT';
+            const totalQuantity = inv.stockQuantity * packSize;
+            const reorderQuantity = inv.reorderPoint * packSize;
 
             return (
               <div key={inv._id} className="p-3 rounded-2xl border border-gray-100 bg-gray-50/40 flex flex-col gap-3">
@@ -193,7 +197,7 @@ export const InventoryManager = ({ storeId }) => {
                     )}
                   </div>
                   <p className="text-[11px] text-gray-400 truncate">
-                    Reorder Threshold: {inv.reorderPoint} {product?.unit}
+                    Reorder Threshold: {inv.reorderPoint} item(s) · {reorderQuantity} {unit}
                   </p>
                 </div>
 
@@ -204,7 +208,10 @@ export const InventoryManager = ({ storeId }) => {
                         isLow ? 'text-amber-600' : inv.stockQuantity === 0 ? 'text-red-600' : 'text-gray-900'
                       }`}
                     >
-                      {inv.stockQuantity} {product?.unit}
+                      {inv.stockQuantity} item(s)
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-semibold block">
+                      {totalQuantity} {unit} total
                     </span>
                     {isLow && <span className="text-[9px] text-amber-600 font-extrabold block">LOW</span>}
                   </div>
@@ -269,6 +276,9 @@ export const InventoryManager = ({ storeId }) => {
               <div>
                 <h4 className="font-bold text-gray-900 text-sm">Update Stock Balance</h4>
                 <p className="text-xs text-gray-500">{selectedItem.productId?.name}</p>
+                <p className="text-[11px] text-green-700 font-semibold mt-0.5">
+                  1 item = {selectedItem.productId?.unitQuantity || 1} {selectedItem.productId?.unit || 'UNIT'}
+                </p>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -293,18 +303,21 @@ export const InventoryManager = ({ storeId }) => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Quantity ({selectedItem.productId?.unit})
+                  Quantity (items / packs)
                 </label>
                 <input
                   type="number"
                   required
                   min="0.001"
                   step="any"
-                  placeholder="e.g. 50"
+                  placeholder="e.g. 10"
                   value={quantityShift}
                   onChange={(e) => setQuantityShift(e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold"
                 />
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Enter the number of packs/items, not the total weight.
+                </p>
               </div>
 
               <div>
@@ -375,9 +388,11 @@ export const InventoryManager = ({ storeId }) => {
                         }`}
                       >
                         {tx.quantityDelta > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
-                        {tx.quantityDelta > 0 ? `+${tx.quantityDelta}` : tx.quantityDelta}
+                        {tx.quantityDelta > 0 ? `+${tx.quantityDelta}` : tx.quantityDelta} item(s)
                       </span>
-                      <span className="text-[10px] text-gray-400 block">Stock: {tx.newStock}</span>
+                      <span className="text-[10px] text-gray-400 block">
+                        Stock: {tx.newStock} item(s)
+                      </span>
                     </div>
                   </div>
                 ))
