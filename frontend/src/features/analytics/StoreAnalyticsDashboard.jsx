@@ -283,8 +283,13 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
           </div>
         </section>
 
-        <section className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs hover:shadow-sm transition-shadow">
-          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-sky-500" /> Operational health</h4>
+        <section className="bg-white border border-sky-200/80 rounded-xl p-3.5 shadow-xs hover:shadow-md hover:shadow-sky-100 transition-all">
+          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-sm shadow-sky-200">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+            Operational health
+          </h4>
           <div className="grid grid-cols-2 gap-2">
             <div className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
               <div className="w-7 h-7 bg-slate-200/80 rounded-lg flex items-center justify-center mb-2"><Users className="w-3.5 h-3.5 text-slate-600" /></div>
@@ -307,12 +312,22 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-        <section className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs hover:shadow-sm transition-shadow">
-          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"><Award className="w-4 h-4 text-amber-600" /> Products creating most value</h4>
+        <section className="bg-white border border-amber-200/80 rounded-xl p-3.5 shadow-xs hover:shadow-md hover:shadow-amber-100 transition-all">
+          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-sm shadow-amber-200">
+              <Award className="w-4 h-4" />
+            </span>
+            Products creating most value
+          </h4>
 
           {topProducts.length === 0 ? (
-            <div className="text-xs text-stone-400 py-4 text-center bg-amber-50 rounded-xl border border-dashed border-amber-200">
-              Complete orders to view top sellers.
+            <div className="relative overflow-hidden text-xs py-5 text-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 rounded-xl border border-amber-200">
+              <div className="absolute -right-5 -top-6 w-20 h-20 rounded-full bg-amber-200/30" />
+              <div className="relative">
+                <Award className="w-6 h-6 mx-auto mb-2 text-amber-500" />
+                <p className="font-bold text-amber-900">No top sellers yet</p>
+                <p className="text-[11px] text-amber-700/80 mt-0.5">Complete orders to see your best products.</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -338,11 +353,21 @@ export const StoreAnalyticsDashboard = ({ storeId }) => {
           )}
         </section>
 
-        <section className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs hover:shadow-sm transition-shadow">
-          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> Payment mix</h4>
+        <section className="bg-white border border-violet-200/80 rounded-xl p-3.5 shadow-xs hover:shadow-md hover:shadow-violet-100 transition-all">
+          <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center shadow-sm shadow-violet-200">
+              <WalletCards className="w-4 h-4" />
+            </span>
+            Payment mix
+          </h4>
           {paymentMix.length === 0 ? (
-            <div className="text-xs text-stone-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-              No payment data yet.
+            <div className="relative overflow-hidden text-xs py-5 text-center bg-gradient-to-br from-violet-50 via-indigo-50 to-sky-50 rounded-xl border border-violet-200">
+              <div className="absolute -left-5 -bottom-7 w-20 h-20 rounded-full bg-violet-200/30" />
+              <div className="relative">
+                <WalletCards className="w-6 h-6 mx-auto mb-2 text-violet-500" />
+                <p className="font-bold text-violet-900">No payment data yet</p>
+                <p className="text-[11px] text-violet-700/80 mt-0.5">Payment details will appear after sales.</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
