@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
-import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload } from 'lucide-react';
+import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown } from 'lucide-react';
 
 export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [categories, setCategories] = useState([]);
@@ -348,13 +348,29 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
             {importError && <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl font-medium">{importError}</div>}
             {importResult && (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-1.5">
-                <p className="font-bold">
-                  Imported {importResult.productsCreated} products. Skipped {importResult.skippedRows.length} row(s).
-                </p>
-                {importResult.skippedRows.map((item) => (
-                  <p key={item.row}><strong>Excel row {item.row}:</strong> {item.reason}</p>
-                ))}
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs">
+                <div className="flex items-center justify-between gap-3 p-3">
+                  <p className="font-bold">
+                    Imported {importResult.productsCreated} products
+                  </p>
+                  <span className="shrink-0 rounded-full bg-amber-200/70 px-2 py-1 text-[10px] font-extrabold">
+                    {importResult.skippedRows.length} skipped
+                  </span>
+                </div>
+                <details className="group border-t border-amber-200">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 font-bold text-amber-800">
+                    <span>View skipped rows</span>
+                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="max-h-40 space-y-1.5 overflow-y-auto border-t border-amber-200/70 px-3 py-2.5">
+                    {importResult.skippedRows.map((item) => (
+                      <div key={item.row} className="flex gap-2 leading-4">
+                        <strong className="shrink-0">Row {item.row}</strong>
+                        <span>{item.reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </div>
             )}
             <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
