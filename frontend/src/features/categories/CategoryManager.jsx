@@ -137,7 +137,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
     return {
       name: String(value('Name', 'Product Name')).trim(),
-      regionalName: String(value('Regional Name', 'RegionalName', 'Alias')).trim(),
+      regionalName: String(value('Regional Name', 'RegionalName')).trim(),
       categoryName: String(value('Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
       unit: unitMap[quantityUnit] || 'PIECE',
       unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,

@@ -357,7 +357,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                             setFormData({
                               ...formData,
                               name: suggestion.name,
-                              regionalName: suggestion.alias || '',
+                              regionalName: '',
                               categoryId: categories.find((category) => category.name === suggestion.categoryName)?._id || formData.categoryId,
                               unit: suggestion.unit || formData.unit,
                               unitQuantity: suggestion.unitQuantity || formData.unitQuantity,
