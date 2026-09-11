@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
+import { productService } from '../../services/productService';
 import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
@@ -19,6 +20,7 @@ export const InventoryManager = ({ storeId }) => {
   const [stockLimit, setStockLimit] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
+  const [partialSaleSavingId, setPartialSaleSavingId] = useState(null);
 
   const fetchInventory = async () => {
     try {
@@ -98,6 +100,32 @@ export const InventoryManager = ({ storeId }) => {
       setTransactions(res.data);
     } catch (err) {
       console.error('Failed to load history', err);
+    }
+  };
+
+  const handlePartialSaleToggle = async (item, allowPartialSale) => {
+    const product = item.productId;
+    if (!product?._id || partialSaleSavingId === product._id) return;
+
+    const previousValue = Boolean(product.allowPartialSale);
+    setPartialSaleSavingId(product._id);
+    setInventory((prev) => prev.map((entry) => (
+      entry._id === item._id
+        ? { ...entry, productId: { ...entry.productId, allowPartialSale } }
+        : entry
+    )));
+
+    try {
+      await productService.updateProduct(storeId, product._id, { allowPartialSale });
+    } catch (err) {
+      setInventory((prev) => prev.map((entry) => (
+        entry._id === item._id
+          ? { ...entry, productId: { ...entry.productId, allowPartialSale: previousValue } }
+          : entry
+      )));
+      setError(err.message || 'Failed to update partial sale setting');
+    } finally {
+      setPartialSaleSavingId(null);
     }
   };
 
@@ -206,6 +234,19 @@ export const InventoryManager = ({ storeId }) => {
                   <p className="text-[11px] text-gray-400 truncate">
                     Reorder Threshold: {inv.reorderPoint} item(s) · {reorderQuantity} {unit}
                   </p>
+                  <label className="mt-1 flex items-start gap-2 text-[11px] text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(product?.allowPartialSale)}
+                      disabled={partialSaleSavingId === product?._id}
+                      onChange={(e) => handlePartialSaleToggle(inv, e.target.checked)}
+                      className="mt-0.5 accent-green-600 disabled:opacity-50"
+                    />
+                    <span>
+                      Allow customer to buy partially
+                      <span className="block text-[10px] text-gray-400">Off by default. Customer requests go for approval.</span>
+                    </span>
+                  </label>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 shrink-0">
