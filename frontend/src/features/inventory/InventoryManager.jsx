@@ -11,6 +11,7 @@ export const InventoryManager = ({ storeId }) => {
   const [type, setType] = useState('PURCHASE');
   const [reason, setReason] = useState('');
   const [error, setError] = useState(null);
+  const [isSavingShift, setIsSavingShift] = useState(false);
   const [historyItem, setHistoryItem] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,12 +61,16 @@ export const InventoryManager = ({ storeId }) => {
     setQuantityShift('');
     setReason('');
     setError(null);
+    setIsSavingShift(false);
     setShowModal(true);
   };
 
   const handleAdjustSubmit = async (e) => {
     e.preventDefault();
+    if (isSavingShift || !selectedItem) return;
+
     setError(null);
+    setIsSavingShift(true);
 
     const shift = Number(quantityShift);
     const finalDelta = type === 'DAMAGE' || type === 'CORRECTION' ? -Math.abs(shift) : Math.abs(shift);
@@ -81,6 +86,8 @@ export const InventoryManager = ({ storeId }) => {
       fetchInventory();
     } catch (err) {
       setError(err.message || 'Failed to update stock');
+    } finally {
+      setIsSavingShift(false);
     }
   };
 
@@ -341,10 +348,20 @@ export const InventoryManager = ({ storeId }) => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1"
+                  disabled={isSavingShift}
+                  className="px-4 py-2 bg-green-600 active:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 disabled:cursor-wait disabled:opacity-70"
                 >
-                  <Check className="w-4 h-4" />
-                  Save Shift
+                  {isSavingShift ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Save Shift
+                    </>
+                  )}
                 </button>
               </div>
             </form>
