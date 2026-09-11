@@ -40,6 +40,7 @@ export class ProductValidator {
       barcode: data.barcode ? data.barcode.trim() : null,
       unit: data.unit.toUpperCase(),
       unitQuantity: data.unitQuantity ? Number(data.unitQuantity) : 1,
+      allowPartialSale: data.allowPartialSale === true,
       mrp: Number(data.mrp),
       sellingPrice: Number(data.sellingPrice),
       purchasePrice: data.purchasePrice ? Number(data.purchasePrice) : 0,

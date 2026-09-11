@@ -138,6 +138,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                 {itemList.map(({ product, quantity, lineTotal }) => (
                   (() => {
                     const packLabel = `${product.unitQuantity || 1} ${product.unit}`;
+                    const quantityLabel = product.allowPartialSale ? product.unit : `x ${packLabel}`;
 
                     return (
                   <div key={product._id} className="pt-2 pb-2 flex flex-wrap items-center justify-between gap-2">
@@ -151,7 +152,11 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[11px] font-bold text-gray-900 truncate">{product.name}</h4>
-                        <p className="text-[10px] text-gray-500">₹{product.sellingPrice} per {packLabel}</p>
+                        <p className="text-[10px] text-gray-500">
+                          ₹{product.allowPartialSale
+                            ? (product.sellingPrice / (product.unitQuantity || 1)).toFixed(2)
+                            : product.sellingPrice} per {product.allowPartialSale ? product.unit : packLabel}
+                        </p>
                       </div>
                     </div>
 
@@ -166,12 +171,12 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         <input
                           type="text"
                           inputMode="numeric"
-                          min="1"
-                          step="1"
+                          min={product.allowPartialSale ? '0.001' : '1'}
+                          step={product.allowPartialSale ? '0.001' : '1'}
                           value={quantityDrafts[product._id] ?? quantity}
                           onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(quantity) }))}
                           onChange={(event) => {
-                            if (/^\d*$/.test(event.target.value)) {
+                            if (product.allowPartialSale ? /^\d*\.?\d*$/.test(event.target.value) : /^\d*$/.test(event.target.value)) {
                               setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                             }
                           }}
@@ -183,10 +188,10 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                               return next;
                             });
                           }}
-                          aria-label={`Number of ${packLabel} packs for ${product.name}`}
+                          aria-label={`Quantity in ${product.unit} for ${product.name}`}
                           className="min-w-0 w-8 flex-1 bg-transparent text-center text-[11px] font-bold outline-none"
                         />
-                        <span className="shrink-0 text-[10px] font-black whitespace-nowrap">x {packLabel}</span>
+                        <span className="shrink-0 text-[10px] font-black whitespace-nowrap">{quantityLabel}</span>
                         <button
                           onClick={() => updateQuantity(product, 1)}
                           className="shrink-0 p-1.5 text-gray-600 hover:bg-gray-200 rounded-r-lg"

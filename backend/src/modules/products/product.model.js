@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema(
       required: true
     },
     unitQuantity: { type: Number, required: true, default: 1, min: 0.001 },
+    allowPartialSale: { type: Boolean, default: false },
     mrp: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },
     purchasePrice: { type: Number, default: 0, min: 0 },

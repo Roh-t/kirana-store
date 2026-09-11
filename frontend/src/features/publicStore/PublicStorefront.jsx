@@ -194,6 +194,7 @@ export const PublicStorefront = ({ slug }) => {
             const qty = items[product._id]?.quantity || 0;
             const hasDiscount = product.mrp > product.sellingPrice;
             const packLabel = `${product.unitQuantity || 1} ${product.unit}`;
+            const quantityLabel = product.allowPartialSale ? product.unit : `x ${packLabel}`;
 
             return (
               <div
@@ -230,7 +231,7 @@ export const PublicStorefront = ({ slug }) => {
                     </span>
                   ) : qty === 0 ? (
                     <button
-                      onClick={() => updateQuantity(product, 1)}
+                      onClick={() => updateQuantity(product, product.allowPartialSale ? product.unitQuantity : 1)}
                       className="px-3.5 py-1.5 bg-green-50 text-green-700 border border-green-200 active:bg-green-100 rounded-xl text-[11px] font-black flex items-center gap-1 transition active:scale-95"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -247,12 +248,12 @@ export const PublicStorefront = ({ slug }) => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        min="1"
-                        step="1"
+                        min={product.allowPartialSale ? '0.001' : '1'}
+                        step={product.allowPartialSale ? '0.001' : '1'}
                         value={quantityDrafts[product._id] ?? qty}
                         onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(qty) }))}
                         onChange={(event) => {
-                          if (/^\d*$/.test(event.target.value)) {
+                          if (product.allowPartialSale ? /^\d*\.?\d*$/.test(event.target.value) : /^\d*$/.test(event.target.value)) {
                             setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
                           }
                         }}
@@ -265,10 +266,10 @@ export const PublicStorefront = ({ slug }) => {
                           });
                         }}
                         onClick={(event) => event.stopPropagation()}
-                        aria-label={`Number of ${packLabel} packs for ${product.name}`}
+                        aria-label={`Quantity in ${product.unit} for ${product.name}`}
                         className="min-w-0 flex-1 w-8 bg-transparent text-center text-xs font-black outline-none"
                       />
-                      <span className="shrink-0 text-[10px] font-black whitespace-nowrap">x {packLabel}</span>
+                      <span className="shrink-0 text-[10px] font-black whitespace-nowrap">{quantityLabel}</span>
                       <button
                         onClick={() => updateQuantity(product, 1)}
                         className="shrink-0 p-2 active:bg-green-700 rounded-r-xl transition"

@@ -53,7 +53,7 @@ export class PublicService {
     }
 
     const products = await Product.find(query)
-      .select('name regionalName brand unit unitQuantity mrp sellingPrice taxRate imageUrl categoryId barcode')
+      .select('name regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
       .populate('categoryId', 'name slug')
       .sort({ createdAt: -1 });
 
@@ -98,7 +98,7 @@ export class PublicService {
       .select('orderNumber orderType items subTotal grandTotal orderStatus paymentStatus estimatedReadyAt createdAt')
       .populate({
         path: 'items.productId',
-        select: 'name regionalName unit unitQuantity sellingPrice mrp isAvailable isDeleted'
+        select: 'name regionalName unit unitQuantity allowPartialSale sellingPrice mrp isAvailable isDeleted'
       })
       .sort({ createdAt: -1 })
       .limit(10);

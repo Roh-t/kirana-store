@@ -30,6 +30,13 @@ export const CartProvider = ({ slug, children }) => {
     }
   }, [items, storageKey]);
 
+  const getLineTotal = (product, quantity) => {
+    const unitPrice = product.allowPartialSale
+      ? product.sellingPrice / (product.unitQuantity || 1)
+      : product.sellingPrice;
+    return quantity * unitPrice;
+  };
+
   const updateQuantity = (product, delta) => {
     setItems((prev) => {
       const existing = prev[product._id];
@@ -47,7 +54,7 @@ export const CartProvider = ({ slug, children }) => {
         [product._id]: {
           product,
           quantity: newQty,
-          lineTotal: newQty * product.sellingPrice
+          lineTotal: getLineTotal(product, newQty)
         }
       };
     });
@@ -63,7 +70,7 @@ export const CartProvider = ({ slug, children }) => {
       [product._id]: {
         product,
         quantity: nextQuantity,
-        lineTotal: nextQuantity * product.sellingPrice
+        lineTotal: getLineTotal(product, nextQuantity)
       }
     }));
   };

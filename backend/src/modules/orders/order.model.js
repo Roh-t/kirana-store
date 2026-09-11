@@ -10,6 +10,7 @@ const orderItemSnapshotSchema = new mongoose.Schema(
     purchasePriceSnapshot: { type: Number, default: 0, min: 0 },
     taxRateSnapshot: { type: Number, default: 0, min: 0 },
     quantity: { type: Number, required: true, min: 0.001 },
+    inventoryQuantity: { type: Number, min: 0.001 },
     lineSubTotal: { type: Number, required: true, min: 0 },
     lineTaxAmount: { type: Number, default: 0, min: 0 },
     lineGrandTotal: { type: Number, required: true, min: 0 }

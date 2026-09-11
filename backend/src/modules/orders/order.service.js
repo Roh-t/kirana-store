@@ -47,7 +47,17 @@ export class OrderService {
         throw ApiError.badRequest(`Item "${reqItem.productId}" is no longer available in catalog.`);
       }
 
-      const lineSubTotal = product.sellingPrice * reqItem.quantity;
+      const isPartialSale = product.allowPartialSale === true;
+      if (!isPartialSale && !Number.isInteger(reqItem.quantity)) {
+        throw ApiError.badRequest(`"${product.name}" is sold only as a full pack.`);
+      }
+      const inventoryQuantity = isPartialSale
+        ? reqItem.quantity / product.unitQuantity
+        : reqItem.quantity;
+      const unitPrice = isPartialSale
+        ? product.sellingPrice / product.unitQuantity
+        : product.sellingPrice;
+      const lineSubTotal = unitPrice * reqItem.quantity;
       const lineTaxAmount = (lineSubTotal * product.taxRate) / 100;
       const lineGrandTotal = lineSubTotal + lineTaxAmount;
 
@@ -57,12 +67,13 @@ export class OrderService {
       snapshottedItems.push({
         productId: product._id,
         nameSnapshot: product.name,
-        unitSnapshot: `${product.unitQuantity} ${product.unit}`,
+        unitSnapshot: isPartialSale ? product.unit : `${product.unitQuantity} ${product.unit}`,
         mrpSnapshot: product.mrp,
         sellingPriceSnapshot: product.sellingPrice,
         purchasePriceSnapshot: product.purchasePrice || 0,
         taxRateSnapshot: product.taxRate || 0,
         quantity: reqItem.quantity,
+        inventoryQuantity,
         lineSubTotal,
         lineTaxAmount,
         lineGrandTotal
@@ -138,7 +149,8 @@ export class OrderService {
       }
 
       const previousStock = inventory.stockQuantity;
-      const newStock = Math.max(0, previousStock - item.quantity);
+      const stockDelta = item.inventoryQuantity ?? item.quantity;
+      const newStock = Math.max(0, previousStock - stockDelta);
 
       inventory.stockQuantity = newStock;
       await inventory.save();
@@ -147,7 +159,7 @@ export class OrderService {
         storeId: order.storeId,
         productId: item.productId,
         type: 'SALE',
-        quantityDelta: -item.quantity,
+        quantityDelta: -stockDelta,
         previousStock,
         newStock,
         referenceId: order._id,
@@ -176,7 +188,8 @@ export class OrderService {
       let inventory = await Inventory.findOne({ storeId: order.storeId, productId: item.productId });
       if (inventory) {
         const previousStock = inventory.stockQuantity;
-        const newStock = previousStock + item.quantity;
+        const stockDelta = item.inventoryQuantity ?? item.quantity;
+        const newStock = previousStock + stockDelta;
 
         inventory.stockQuantity = newStock;
         await inventory.save();
@@ -185,7 +198,7 @@ export class OrderService {
           storeId: order.storeId,
           productId: item.productId,
           type: 'RETURN',
-          quantityDelta: item.quantity,
+          quantityDelta: stockDelta,
           previousStock,
           newStock,
           referenceId: order._id,
@@ -374,7 +387,10 @@ static async modifyOrderItems(storeId, userId, orderId, updatedItems, reason) {
     const product = await Product.findOne({ _id: item.productId, storeId, isDeleted: false });
     if (!product) continue;
 
-    const lineSubTotal = product.sellingPrice * item.quantity;
+    const isPartialSale = product.allowPartialSale === true;
+    const inventoryQuantity = isPartialSale ? item.quantity / product.unitQuantity : item.quantity;
+    const unitPrice = isPartialSale ? product.sellingPrice / product.unitQuantity : product.sellingPrice;
+    const lineSubTotal = unitPrice * item.quantity;
     const lineTaxAmount = (lineSubTotal * product.taxRate) / 100;
     const lineGrandTotal = lineSubTotal + lineTaxAmount;
 
@@ -384,12 +400,13 @@ static async modifyOrderItems(storeId, userId, orderId, updatedItems, reason) {
     newSnapshottedItems.push({
       productId: product._id,
       nameSnapshot: product.name,
-      unitSnapshot: `${product.unitQuantity} ${product.unit}`,
+      unitSnapshot: isPartialSale ? product.unit : `${product.unitQuantity} ${product.unit}`,
       mrpSnapshot: product.mrp,
       sellingPriceSnapshot: product.sellingPrice,
       purchasePriceSnapshot: product.purchasePrice || 0,
       taxRateSnapshot: product.taxRate || 0,
       quantity: item.quantity,
+      inventoryQuantity,
       lineSubTotal,
       lineTaxAmount,
       lineGrandTotal

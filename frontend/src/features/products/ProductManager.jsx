@@ -28,6 +28,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
     categoryId: '',
     unit: 'KG',
     unitQuantity: 1,
+    allowPartialSale: false,
     mrp: '',
     sellingPrice: '',
     barcode: '',
@@ -95,6 +96,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
     const payload = {
       ...formData,
       unitQuantity: Number(formData.unitQuantity) || 1,
+      allowPartialSale: Boolean(formData.allowPartialSale),
       mrp: Number(formData.mrp),
       sellingPrice: Number(formData.sellingPrice),
       taxRate: Number(formData.taxRate) || 0
@@ -141,6 +143,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
       categoryId: categories[0]?._id || '',
       unit: 'KG',
       unitQuantity: 1,
+      allowPartialSale: false,
       mrp: '',
       sellingPrice: '',
       barcode: '',
@@ -190,6 +193,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
       categoryId: p.categoryId._id || p.categoryId,
       unit: p.unit,
       unitQuantity: p.unitQuantity,
+      allowPartialSale: Boolean(p.allowPartialSale),
       mrp: p.mrp,
       sellingPrice: p.sellingPrice,
       barcode: p.barcode || '',
@@ -501,6 +505,18 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                       </select>
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1">e.g. 500 GRAM or 1 KG</p>
+                    <label className="mt-2 flex items-start gap-2 text-[11px] text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowPartialSale}
+                        onChange={(e) => setFormData({ ...formData, allowPartialSale: e.target.checked })}
+                        className="mt-0.5 accent-green-600"
+                      />
+                      <span>
+                        Allow loose quantity
+                        <span className="block text-[10px] text-gray-400">Customers can request less than one full pack for approval.</span>
+                      </span>
+                    </label>
                   </div>
                 </div>
 
