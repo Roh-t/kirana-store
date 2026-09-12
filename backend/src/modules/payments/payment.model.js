@@ -25,12 +25,20 @@ const paymentSchema = new mongoose.Schema(
     },
     transactionId: { type: String, trim: true, default: null, sparse: true },
     gatewayResponse: { type: Object, default: null },
-    receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+    // Null for customer self-checkout payments auto-verified via gateway webhook/signature
+    // (no staff member "received" it); populated when staff manually records CASH/UPI/UDHAR.
+    receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   },
   { timestamps: true }
 );
 
 paymentSchema.index({ storeId: 1, orderId: 1 });
 paymentSchema.index({ storeId: 1, status: 1, createdAt: -1 });
+// Prevents double-recording the same gateway payment if both the client-side
+// verify call and the async webhook race to record it.
+paymentSchema.index(
+  { gateway: 1, transactionId: 1 },
+  { unique: true, partialFilterExpression: { gateway: 'RAZORPAY', transactionId: { $type: 'string' } } }
+);
 
 export const Payment = mongoose.model('Payment', paymentSchema);

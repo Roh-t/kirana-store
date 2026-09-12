@@ -70,6 +70,22 @@ const storeSchema = new mongoose.Schema(
       upiId: { type: String, trim: true, default: null },
       payeeName: { type: String, trim: true, default: null }
     },
+    // Razorpay Route linked account used to auto-split & settle customer online
+    // payments directly into the owner's bank account. Money is verified by
+    // Razorpay's signed webhook, not by manual staff confirmation.
+    payoutAccount: {
+      razorpayAccountId: { type: String, trim: true, default: null },
+      status: {
+        type: String,
+        enum: ['NOT_ONBOARDED', 'PENDING', 'ACTIVE', 'REJECTED'],
+        default: 'NOT_ONBOARDED'
+      },
+      legalBusinessName: { type: String, trim: true, default: null },
+      beneficiaryName: { type: String, trim: true, default: null },
+      bankAccountLast4: { type: String, trim: true, default: null },
+      ifsc: { type: String, trim: true, uppercase: true, default: null },
+      onboardedAt: { type: Date, default: null }
+    },
     subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', default: null },
     status: {
       type: String,

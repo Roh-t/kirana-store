@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { downloadOrderPdf } from '../../utils/pdfDownloader';
-import { CheckCircle2, Clock, MapPin, ArrowLeft, Download } from 'lucide-react';
+import { razorpayService, loadRazorpayScript } from '../../services/razorpayService';
+import { CheckCircle2, Clock, MapPin, ArrowLeft, Download, ShieldCheck } from 'lucide-react';
 
-export const OrderSuccessView = ({ order, onBackToStore }) => {
+export const OrderSuccessView = ({ order: initialOrder, store, onBackToStore }) => {
   const [downloading, setDownloading] = useState(false);
+  const [order, setOrder] = useState(initialOrder);
+  const [payingOnline, setPayingOnline] = useState(false);
+  const [payError, setPayError] = useState(null);
 
   const handleDirectDownload = async () => {
     try {
@@ -13,6 +17,66 @@ export const OrderSuccessView = ({ order, onBackToStore }) => {
       alert('Failed to download PDF bill');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  // Only offered when the shopkeeper has completed Razorpay Route onboarding
+  // (store.payoutAccount.status === 'ACTIVE'). Money never touches our
+  // platform's account first, and never sits with the customer's word either
+  // - the order is only marked PAID once Razorpay returns a signed, verified
+  // confirmation for that exact payment.
+  const canPayOnline = store?.payoutAccount?.status === 'ACTIVE' && order.paymentStatus !== 'PAID';
+
+  const handlePayOnline = async () => {
+    setPayError(null);
+    setPayingOnline(true);
+    try {
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        setPayError('Failed to load payment SDK. Check your internet connection.');
+        setPayingOnline(false);
+        return;
+      }
+
+      const intentRes = await razorpayService.createOrderPaymentIntent(store.slug, order._id);
+      const { razorpayOrderId, amount, currency, keyId, storeName } = intentRes.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name: storeName,
+        description: `Payment for Order ${order.orderNumber}`,
+        order_id: razorpayOrderId,
+        prefill: {
+          name: order.customerDetails?.name || '',
+          contact: order.customerDetails?.phone?.replace(/\D/g, '') || ''
+        },
+        theme: { color: '#16a34a' },
+        handler: async function (response) {
+          try {
+            await razorpayService.verifyOrderPayment(store.slug, order._id, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            setOrder((prev) => ({ ...prev, paymentStatus: 'PAID' }));
+          } catch (verifyErr) {
+            setPayError(verifyErr.message || 'Payment verification failed. If money was debited, contact the store.');
+          } finally {
+            setPayingOnline(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setPayingOnline(false)
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (err) {
+      setPayError(err.message || 'Failed to start online payment');
+      setPayingOnline(false);
     }
   };
 
@@ -58,6 +122,31 @@ export const OrderSuccessView = ({ order, onBackToStore }) => {
             <span className="text-green-700">₹{order.grandTotal}</span>
           </div>
         </div>
+
+        {/* Online Payment */}
+        {order.paymentStatus === 'PAID' ? (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center justify-center gap-2 text-green-700 text-xs font-bold">
+            <ShieldCheck className="w-4 h-4" />
+            Payment Verified & Received
+          </div>
+        ) : canPayOnline ? (
+          <div className="space-y-2">
+            {payError && (
+              <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-lg font-medium text-left">{payError}</div>
+            )}
+            <button
+              onClick={handlePayOnline}
+              disabled={payingOnline}
+              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {payingOnline ? 'Opening secure checkout...' : `Pay Online Now (₹${order.grandTotal})`}
+            </button>
+            <p className="text-[10px] text-gray-400">Secured by Razorpay · UPI, Cards, Netbanking &amp; Wallets</p>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Pay in cash or via UPI QR at pickup/delivery, or to the delivery staff.</p>
+        )}
 
         {/* Direct PDF Download Button */}
         <button

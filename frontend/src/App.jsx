@@ -14,6 +14,7 @@ import { CustomerManager } from './features/customers/CustomerManager';
 import { StoreAnalyticsDashboard } from './features/analytics/StoreAnalyticsDashboard';
 import { StaffManager } from './features/stores/StaffManager';
 import { StoreTimingSettings } from './features/stores/StoreTimingSettings';
+import { PayoutSettings } from './features/stores/PayoutSettings';
 import { AuditLogViewer } from './features/auditLogs/AuditLogViewer';
 import { NotificationFeed } from './features/notifications/NotificationFeed';
 import { SuperAdminDashboard } from './features/admin/SuperAdminDashboard';
@@ -289,6 +290,7 @@ function DashboardView() {
                 store={activeStore}
                 onStoreUpdated={(updatedStore) => setActiveStore(updatedStore)}
               />
+              <PayoutSettings storeId={activeStore._id} />
               <StaffManager storeId={activeStore._id} />
               <AuditLogViewer storeId={activeStore._id} />
             </div>

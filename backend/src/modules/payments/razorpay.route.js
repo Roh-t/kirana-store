@@ -13,4 +13,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), RazorpayContr
 router.post('/create-subscription-order', authenticate, tenantContext, RazorpayController.createOrder);
 router.post('/verify-subscription-payment', authenticate, tenantContext, RazorpayController.verifyPayment);
 
+// Owner-only: onboard/check the store's Razorpay Route linked payout account
+router.post('/payout-account', authenticate, tenantContext, RazorpayController.onboardPayoutAccount);
+router.get('/payout-account', authenticate, tenantContext, RazorpayController.getPayoutAccountStatus);
+
 export default router;

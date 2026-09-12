@@ -103,7 +103,7 @@ export const PublicStorefront = ({ slug }) => {
   };
 
   if (placedOrder) {
-    return <OrderSuccessView order={placedOrder} onBackToStore={() => setPlacedOrder(null)} />;
+    return <OrderSuccessView order={placedOrder} store={store} onBackToStore={() => setPlacedOrder(null)} />;
   }
 
   if (loading && !store) {
