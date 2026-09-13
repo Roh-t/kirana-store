@@ -24,6 +24,10 @@ const paymentSchema = new mongoose.Schema(
       default: 'MANUAL'
     },
     transactionId: { type: String, trim: true, default: null, sparse: true },
+    proofImageData: { type: String, default: null },
+    proofSubmittedAt: { type: Date, default: null },
+    verifiedAt: { type: Date, default: null },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     gatewayResponse: { type: Object, default: null },
     // Null for customer self-checkout payments auto-verified via gateway webhook/signature
     // (no staff member "received" it); populated when staff manually records CASH/UPI/UDHAR.

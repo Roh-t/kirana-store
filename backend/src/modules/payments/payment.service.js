@@ -102,4 +102,71 @@ export class PaymentService {
   static async getPaymentsByOrder(storeId, orderId) {
     return Payment.find({ storeId, orderId }).sort({ createdAt: -1 });
   }
+
+  static async submitPaymentProof(slug, orderId, proofData) {
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'ACTIVE' });
+    const order = store && await Order.findOne({ _id: orderId, storeId: store._id });
+    if (!store) throw ApiError.notFound('Kirana store not found or currently offline');
+    if (!order) throw ApiError.notFound('Order not found');
+    if (order.paymentStatus === 'PAID') throw ApiError.badRequest('This order is already paid.');
+
+    if (!proofData?.imageData || !proofData.imageData.startsWith('data:image/')) {
+      throw ApiError.badRequest('A valid payment screenshot is required.');
+    }
+    if (proofData.imageData.length > 6 * 1024 * 1024) {
+      throw ApiError.badRequest('Payment screenshot is too large. Maximum size is 4 MB.');
+    }
+
+    const existingPending = await Payment.findOne({
+      storeId: store._id,
+      orderId: order._id,
+      status: 'PENDING'
+    });
+    if (existingPending) {
+      existingPending.proofImageData = proofData.imageData;
+      existingPending.transactionId = proofData.transactionId?.trim() || null;
+      existingPending.proofSubmittedAt = new Date();
+      await existingPending.save();
+      return existingPending;
+    }
+
+    return Payment.create({
+      storeId: store._id,
+      orderId: order._id,
+      paymentNumber: await this.generatePaymentNumber(store._id),
+      amount: order.grandTotal,
+      method: 'UPI',
+      status: 'PENDING',
+      gateway: 'MANUAL',
+      transactionId: proofData.transactionId?.trim() || null,
+      proofImageData: proofData.imageData,
+      proofSubmittedAt: new Date()
+    });
+  }
+
+  static async verifyPayment(storeId, userId, paymentId) {
+    const payment = await Payment.findOne({ _id: paymentId, storeId, status: 'PENDING' });
+    if (!payment) throw ApiError.notFound('Pending payment proof not found');
+
+    const order = await Order.findOne({ _id: payment.orderId, storeId });
+    if (!order) throw ApiError.notFound('Order not found');
+
+    payment.status = 'SUCCESS';
+    payment.receivedBy = userId;
+    payment.verifiedBy = userId;
+    payment.verifiedAt = new Date();
+    await payment.save();
+
+    const successfulPayments = await Payment.find({
+      storeId,
+      orderId: order._id,
+      status: 'SUCCESS',
+      method: { $ne: 'UDHAR' }
+    });
+    const totalPaid = successfulPayments.reduce((sum, item) => sum + item.amount, 0);
+    order.paymentStatus = totalPaid >= order.grandTotal ? 'PAID' : 'PARTIALLY_PAID';
+    await order.save();
+
+    return { payment, order };
+  }
 }

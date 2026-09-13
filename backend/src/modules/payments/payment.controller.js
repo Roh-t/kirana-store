@@ -45,4 +45,17 @@ export class PaymentController {
       next(error);
     }
   }
+
+  static async verifyPayment(req, res, next) {
+    try {
+      const result = await PaymentService.verifyPayment(req.storeId, req.user._id, req.params.paymentId);
+      return ApiResponse.success(res, {
+        statusCode: 200,
+        message: 'Payment proof verified successfully',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

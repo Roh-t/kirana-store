@@ -11,5 +11,6 @@ router.use(tenantContext);
 router.post('/', PaymentController.recordPayment);
 router.get('/upi-qr/:orderId', PaymentController.getUpiQrPayload);
 router.get('/order/:orderId', PaymentController.getPaymentsByOrder);
+router.patch('/:paymentId/verify', PaymentController.verifyPayment);
 
 export default router;

@@ -1,4 +1,5 @@
 import { PublicService } from './public.service.js';
+import { PaymentService } from '../payments/payment.service.js';
 import { ApiResponse } from '../../utils/apiResponse.js';
 
 export class PublicController {
@@ -48,6 +49,38 @@ export class PublicController {
         statusCode: 200,
         message: 'Customer order history retrieved',
         data: history
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getOrderUpiQr(req, res, next) {
+    try {
+      const store = await PublicService.getPublicStore(req.params.slug);
+      const upiData = await PaymentService.generateStoreUpiQrPayload(store._id, req.params.orderId);
+      return ApiResponse.success(res, {
+        statusCode: 200,
+        message: 'Store UPI QR details generated',
+        data: upiData
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async submitPaymentProof(req, res, next) {
+    try {
+      const payment = await PaymentService.submitPaymentProof(
+        req.params.slug,
+        req.params.orderId,
+        req.body
+      );
+      const { proofImageData, ...safePayment } = payment.toObject();
+      return ApiResponse.success(res, {
+        statusCode: 201,
+        message: 'Payment screenshot submitted for owner verification',
+        data: safePayment
       });
     } catch (error) {
       next(error);

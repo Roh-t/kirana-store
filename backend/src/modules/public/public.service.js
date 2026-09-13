@@ -10,7 +10,7 @@ import { getStoreAvailability } from '../stores/storeHours.util.js';
 export class PublicService {
   static async getPublicStore(slug) {
     const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'ACTIVE' })
-      .select('name slug phone logoUrl address businessConfig qrConfig ownerId payoutAccount.status')
+      .select('name slug phone logoUrl address businessConfig qrConfig ownerId')
       .populate('ownerId', 'phone');
 
     if (!store) {
@@ -27,8 +27,6 @@ export class PublicService {
       ...store.toObject(),
       ownerId: store.ownerId?._id,
       ownerPhone,
-      // Only the activation status is public; bank/KYC details stay internal.
-      payoutAccount: { status: store.payoutAccount?.status || 'NOT_ONBOARDED' },
       availability: getStoreAvailability(store)
     };
   }

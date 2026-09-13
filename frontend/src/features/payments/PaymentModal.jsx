@@ -9,13 +9,18 @@ export const PaymentModal = ({ storeId, order, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [payments, setPayments] = useState([]);
 
   useEffect(() => {
     const fetchUpiDetails = async () => {
       try {
         setLoading(true);
-        const res = await paymentService.getUpiQrPayload(storeId, order._id);
-        setUpiData(res.data);
+        const [upiRes, paymentsRes] = await Promise.all([
+          paymentService.getUpiQrPayload(storeId, order._id),
+          paymentService.getPaymentsByOrder(storeId, order._id)
+        ]);
+        setUpiData(upiRes.data);
+        setPayments(paymentsRes.data || []);
       } catch (err) {
         console.error('Failed to load UPI details', err);
       } finally {
@@ -27,6 +32,22 @@ export const PaymentModal = ({ storeId, order, onClose, onSuccess }) => {
       fetchUpiDetails();
     }
   }, [storeId, order]);
+
+  const pendingProof = payments.find((payment) => payment.status === 'PENDING' && payment.proofImageData);
+
+  const handleVerifyProof = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await paymentService.verifyPayment(storeId, pendingProof._id);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Failed to verify payment proof');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleCollectPayment = async (e) => {
     e.preventDefault();
@@ -69,6 +90,31 @@ export const PaymentModal = ({ storeId, order, onClose, onSuccess }) => {
         </div>
 
         {error && <div className="mb-3 p-2.5 bg-red-50 text-red-700 text-xs rounded-lg font-medium">{error}</div>}
+
+        {pendingProof && (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 space-y-3">
+            <div>
+              <p className="text-xs font-bold text-amber-900">Customer payment screenshot</p>
+              <p className="text-[11px] text-amber-800">Check the amount and transaction details before approving.</p>
+            </div>
+            <img
+              src={pendingProof.proofImageData}
+              alt="Customer payment screenshot"
+              className="max-h-64 max-w-full mx-auto rounded-xl border border-amber-200 object-contain bg-white"
+            />
+            {pendingProof.transactionId && (
+              <p className="text-[11px] font-mono text-amber-900">UTR: {pendingProof.transactionId}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleVerifyProof}
+              disabled={submitting}
+              className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+            >
+              {submitting ? 'Verifying...' : 'Verify Screenshot & Mark Paid'}
+            </button>
+          </div>
+        )}
 
         {/* Method Toggle Buttons */}
         <div className="grid grid-cols-3 gap-2 mb-4">

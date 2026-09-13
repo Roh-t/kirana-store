@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { downloadOrderPdf } from '../../utils/pdfDownloader';
-import { razorpayService, loadRazorpayScript } from '../../services/razorpayService';
-import { CheckCircle2, Clock, MapPin, ArrowLeft, Download, ShieldCheck } from 'lucide-react';
+import { paymentService } from '../../services/paymentService';
+import { CheckCircle2, Clock, ArrowLeft, Download, QrCode, Upload, ShieldCheck } from 'lucide-react';
 
 export const OrderSuccessView = ({ order: initialOrder, store, onBackToStore }) => {
   const [downloading, setDownloading] = useState(false);
   const [order, setOrder] = useState(initialOrder);
-  const [payingOnline, setPayingOnline] = useState(false);
+  const [upiData, setUpiData] = useState(null);
+  const [proofFile, setProofFile] = useState(null);
+  const [transactionId, setTransactionId] = useState('');
+  const [submittingProof, setSubmittingProof] = useState(false);
+  const [proofSubmitted, setProofSubmitted] = useState(false);
   const [payError, setPayError] = useState(null);
 
   const handleDirectDownload = async () => {
@@ -20,63 +24,50 @@ export const OrderSuccessView = ({ order: initialOrder, store, onBackToStore }) 
     }
   };
 
-  // Only offered when the shopkeeper has completed Razorpay Route onboarding
-  // (store.payoutAccount.status === 'ACTIVE'). Money never touches our
-  // platform's account first, and never sits with the customer's word either
-  // - the order is only marked PAID once Razorpay returns a signed, verified
-  // confirmation for that exact payment.
-  const canPayOnline = store?.payoutAccount?.status === 'ACTIVE' && order.paymentStatus !== 'PAID';
+  React.useEffect(() => {
+    if (!store?.slug || !order?._id || !store.qrConfig?.upiId) return;
+    paymentService.getPublicUpiQr(store.slug, order._id)
+      .then((response) => setUpiData(response.data))
+      .catch((error) => setPayError(error.message || 'Unable to load the store QR code'));
+  }, [store?.slug, store?.qrConfig?.upiId, order?._id]);
 
-  const handlePayOnline = async () => {
+  const handleProofFile = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setPayError('Please select a payment screenshot image.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setPayError('Payment screenshot must be smaller than 4 MB.');
+      return;
+    }
     setPayError(null);
-    setPayingOnline(true);
+    setProofFile(file);
+  };
+
+  const handleSubmitProof = async () => {
+    if (!proofFile || !upiData) {
+      setPayError('Upload the payment screenshot after completing the UPI payment.');
+      return;
+    }
+    setPayError(null);
+    setSubmittingProof(true);
     try {
-      const isScriptLoaded = await loadRazorpayScript();
-      if (!isScriptLoaded) {
-        setPayError('Failed to load payment SDK. Check your internet connection.');
-        setPayingOnline(false);
-        return;
-      }
-
-      const intentRes = await razorpayService.createOrderPaymentIntent(store.slug, order._id);
-      const { razorpayOrderId, amount, currency, keyId, storeName } = intentRes.data;
-
-      const options = {
-        key: keyId,
-        amount,
-        currency,
-        name: storeName,
-        description: `Payment for Order ${order.orderNumber}`,
-        order_id: razorpayOrderId,
-        prefill: {
-          name: order.customerDetails?.name || '',
-          contact: order.customerDetails?.phone?.replace(/\D/g, '') || ''
-        },
-        theme: { color: '#16a34a' },
-        handler: async function (response) {
-          try {
-            await razorpayService.verifyOrderPayment(store.slug, order._id, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            });
-            setOrder((prev) => ({ ...prev, paymentStatus: 'PAID' }));
-          } catch (verifyErr) {
-            setPayError(verifyErr.message || 'Payment verification failed. If money was debited, contact the store.');
-          } finally {
-            setPayingOnline(false);
-          }
-        },
-        modal: {
-          ondismiss: () => setPayingOnline(false)
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
+      const reader = new FileReader();
+      const imageData = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read the screenshot.'));
+        reader.readAsDataURL(proofFile);
+      });
+      await paymentService.submitPublicPaymentProof(store.slug, order._id, { imageData, transactionId });
+      setProofSubmitted(true);
+      setProofFile(null);
     } catch (err) {
-      setPayError(err.message || 'Failed to start online payment');
-      setPayingOnline(false);
+      setPayError(err.message || 'Failed to submit payment screenshot');
+    } finally {
+      setSubmittingProof(false);
     }
   };
 
@@ -123,26 +114,51 @@ export const OrderSuccessView = ({ order: initialOrder, store, onBackToStore }) 
           </div>
         </div>
 
-        {/* Online Payment */}
+        {/* Optional manual UPI payment */}
         {order.paymentStatus === 'PAID' ? (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center justify-center gap-2 text-green-700 text-xs font-bold">
             <ShieldCheck className="w-4 h-4" />
             Payment Verified & Received
           </div>
-        ) : canPayOnline ? (
+        ) : proofSubmitted ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-amber-800 text-xs font-bold">
+            Screenshot submitted. The store owner will verify your payment.
+          </div>
+        ) : upiData ? (
           <div className="space-y-2">
             {payError && (
               <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-lg font-medium text-left">{payError}</div>
             )}
-            <button
-              onClick={handlePayOnline}
-              disabled={payingOnline}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              {payingOnline ? 'Opening secure checkout...' : `Pay Online Now (₹${order.grandTotal})`}
-            </button>
-            <p className="text-[10px] text-gray-400">Secured by Razorpay · UPI, Cards, Netbanking &amp; Wallets</p>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 text-center space-y-2">
+              <p className="text-xs font-bold text-gray-800">Pay ₹{upiData.amount} using any UPI app</p>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiData.upiUri)}`}
+                alt="Store UPI QR Code"
+                className="w-44 h-44 mx-auto rounded-xl bg-white p-2"
+              />
+              <p className="text-[11px] font-mono text-gray-600">{upiData.upiId}</p>
+              <input
+                type="text"
+                placeholder="UPI reference / UTR (optional)"
+                value={transactionId}
+                onChange={(event) => setTransactionId(event.target.value)}
+                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white"
+              />
+              <label className="w-full py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-700 flex items-center justify-center gap-2 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                {proofFile ? proofFile.name : 'Upload payment screenshot'}
+                <input type="file" accept="image/*" onChange={handleProofFile} className="hidden" />
+              </label>
+              <button
+                onClick={handleSubmitProof}
+                disabled={submittingProof || !proofFile}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
+              >
+                <QrCode className="w-4 h-4" />
+                {submittingProof ? 'Submitting screenshot...' : 'Submit Payment Screenshot'}
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400">Payment is marked received only after the store owner verifies your screenshot.</p>
           </div>
         ) : (
           <p className="text-xs text-gray-500">Pay in cash or via UPI QR at pickup/delivery, or to the delivery staff.</p>

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { PublicController } from './public.controller.js';
 import { OrderController } from '../orders/order.controller.js';
-import { RazorpayController } from '../payments/razorpay.controller.js';
 
 const router = Router();
 
@@ -15,8 +14,8 @@ router.get('/stores/:slug/customer-orders/:phone', PublicController.getCustomerO
 router.post('/stores/:slug/orders', OrderController.createPublicOrder);
 router.get('/orders/:id', OrderController.getOrderById);
 
-// Customer Online Payment (Razorpay Route) Routes
-router.post('/stores/:slug/orders/:orderId/payment-intent', RazorpayController.createPublicOrderPaymentIntent);
-router.post('/stores/:slug/orders/:orderId/verify-payment', RazorpayController.verifyPublicOrderPayment);
+// Customer manual UPI payment proof routes
+router.get('/stores/:slug/orders/:orderId/upi-qr', PublicController.getOrderUpiQr);
+router.post('/stores/:slug/orders/:orderId/payment-proof', PublicController.submitPaymentProof);
 
 export default router;
