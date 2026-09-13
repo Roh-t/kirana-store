@@ -77,8 +77,8 @@ export const PaymentModal = ({ storeId, order, onClose, onSuccess }) => {
     : '';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center overflow-y-auto p-3 sm:p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 shadow-2xl border border-gray-200">
         <div className="flex items-center justify-between border-b pb-3 border-gray-100 mb-4">
           <div>
             <h4 className="font-bold text-gray-900 text-base">Collect Payment</h4>
@@ -100,7 +100,7 @@ export const PaymentModal = ({ storeId, order, onClose, onSuccess }) => {
             <img
               src={pendingProof.proofImageData}
               alt="Customer payment screenshot"
-              className="max-h-64 max-w-full mx-auto rounded-xl border border-amber-200 object-contain bg-white"
+              className="max-h-[30vh] max-w-full mx-auto rounded-xl border border-amber-200 object-contain bg-white"
             />
             {pendingProof.transactionId && (
               <p className="text-[11px] font-mono text-amber-900">UTR: {pendingProof.transactionId}</p>
