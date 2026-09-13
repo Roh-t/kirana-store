@@ -20,7 +20,7 @@ export const paymentService = {
   },
 
   async verifyPayment(storeId, paymentId) {
-    return apiClient.patch(`/payments/${paymentId}/verify`, null, {
+    return apiClient.patch(`/payments/${paymentId}/verify`, {}, {
       headers: { 'X-Store-Id': storeId }
     });
   },
