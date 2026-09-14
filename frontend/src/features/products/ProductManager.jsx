@@ -24,6 +24,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
 
   const [formData, setFormData] = useState({
     name: '',
+    catalogName: '',
     regionalName: '',
     categoryId: '',
     unit: 'KG',
@@ -139,6 +140,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
     setShowMoreOptions(false);
     setFormData({
       name: '',
+      catalogName: '',
       regionalName: '',
       categoryId: categories[0]?._id || '',
       unit: 'KG',
@@ -189,6 +191,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
     setShowMoreOptions(Boolean(p.barcode || p.regionalName || p.taxRate));
     setFormData({
       name: p.name,
+      catalogName: p.catalogName || '',
       regionalName: p.regionalName || '',
       categoryId: p.categoryId._id || p.categoryId,
       unit: p.unit,
@@ -356,8 +359,9 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                           onClick={() => {
                             setFormData({
                               ...formData,
-                              name: suggestion.name,
-                              regionalName: '',
+                              name: suggestion.hinglishName || suggestion.name,
+                              catalogName: suggestion.catalogName || '',
+                              regionalName: suggestion.hindiName || '',
                               categoryId: categories.find((category) => category.name === suggestion.categoryName)?._id || formData.categoryId,
                               unit: suggestion.unit || formData.unit,
                               unitQuantity: suggestion.unitQuantity || formData.unitQuantity,
@@ -380,6 +384,9 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                           </div>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-xs font-bold text-gray-900">{suggestion.name}</span>
+                            {suggestion.catalogName && suggestion.catalogName !== suggestion.name && (
+                              <span className="block truncate text-[10px] text-gray-500">{suggestion.catalogName}</span>
+                            )}
                             <span className="block truncate text-[10px] text-gray-500">
                               {suggestion.categoryName} · {suggestion.unitQuantity || 1} {suggestion.unit || 'KG'} · ₹{suggestion.sellingPrice}
                             </span>

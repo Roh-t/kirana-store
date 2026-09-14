@@ -6,6 +6,7 @@ import { Order } from '../orders/order.model.js';
 import { Customer } from '../customers/customer.model.js';
 import { ApiError } from '../../utils/apiError.js';
 import { getStoreAvailability } from '../stores/storeHours.util.js';
+import { transliterateHindi } from '../../utils/indianSearch.js';
 
 export class PublicService {
   static async getPublicStore(slug) {
@@ -54,11 +55,23 @@ export class PublicService {
 
     if (search && search.trim().length > 0) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [{ name: searchRegex }, { regionalName: searchRegex }, { brand: searchRegex }];
+      const transliteratedSearchRegex = new RegExp(transliterateHindi(search.trim()), 'i');
+      const matchingCategories = await Category.find({
+        storeId: store._id,
+        isDeleted: false,
+        $or: [{ name: searchRegex }, { searchName: searchRegex }, { searchName: transliteratedSearchRegex }]
+      }).select('_id');
+      query.$or = [
+        { name: searchRegex },
+        { catalogName: searchRegex },
+        { regionalName: searchRegex },
+        { brand: searchRegex },
+        { categoryId: { $in: matchingCategories.map((category) => category._id) } }
+      ];
     }
 
     const products = await Product.find(query)
-      .select('name regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
+      .select('name catalogName regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
       .populate('categoryId', 'name slug')
       .sort({ createdAt: -1 });
 

@@ -7,6 +7,7 @@ import { Inventory } from '../inventory/inventory.model.js';
 import { SubscriptionService } from '../subscriptions/subscription.service.js';
 import { MasterProduct } from '../masterCatalog/masterProduct.model.js';
 import { ApiError } from '../../utils/apiError.js';
+import { createSearchAliases, transliterateHindi } from '../../utils/indianSearch.js';
 
 const normalizeImportPrice = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -40,13 +41,23 @@ export class ProductService {
     const categoryBySlug = new Map(existingCategories.map((category) => [category.slug.trim().toLowerCase(), category]));
     const productNames = productRows.map((row) => String(row.name || '').trim()).filter(Boolean);
     const masterProducts = productNames.length
-      ? await MasterProduct.find({ isActive: true, $or: [{ name: { $in: productNames } }, { alias: { $in: productNames } }] })
-        .select('name alias categoryName imageUrl')
+      ? await MasterProduct.find({
+        isActive: true,
+        $or: [
+          { name: { $in: productNames } },
+          { hinglishName: { $in: productNames } },
+          { catalogName: { $in: productNames } },
+          { alias: { $in: productNames } }
+        ]
+      })
+        .select('name catalogName hinglishName alias categoryName imageUrl')
         .lean()
       : [];
     const masterByName = new Map();
     masterProducts.forEach((product) => {
       masterByName.set(product.name.trim().toLowerCase(), product);
+      if (product.hinglishName) masterByName.set(product.hinglishName.trim().toLowerCase(), product);
+      if (product.catalogName) masterByName.set(product.catalogName.trim().toLowerCase(), product);
       if (product.alias) masterByName.set(product.alias.trim().toLowerCase(), product);
     });
     const categoriesToCreate = [];
@@ -61,6 +72,7 @@ export class ProductService {
         categoryByName.set(key, existing);
         categoryBySlug.set(slug, existing);
         if (existing.isDeleted) categoriesToRestore.add(existing._id);
+        if (!existing.searchName) existing.searchName = createSearchAliases(existing.name);
         return existing;
       }
 
@@ -68,6 +80,7 @@ export class ProductService {
         _id: new mongoose.Types.ObjectId(),
         storeId,
         name,
+        searchName: createSearchAliases(name),
         slug,
         description: details.description || null,
         sortOrder: Number(details.sortOrder) || existingCategories.length + categoriesToCreate.length,
@@ -106,6 +119,7 @@ export class ProductService {
           product: ProductValidator.validateCreateProduct({
             ...row,
             categoryId: category._id,
+            catalogName: row.catalogName || masterProduct?.catalogName || null,
             imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
             unit: row.unit || 'PIECE',
             unitQuantity: row.unitQuantity || 1,
@@ -255,12 +269,20 @@ export class ProductService {
 
     if (search && search.trim().length > 0) {
       const searchRegex = new RegExp(search.trim(), 'i');
+      const transliteratedSearchRegex = new RegExp(transliterateHindi(search.trim()), 'i');
+      const matchingCategories = await Category.find({
+        storeId,
+        isDeleted: false,
+        $or: [{ name: searchRegex }, { searchName: searchRegex }, { searchName: transliteratedSearchRegex }]
+      }).select('_id');
       query.$or = [
         { name: searchRegex },
+        { catalogName: searchRegex },
         { regionalName: searchRegex },
         { brand: searchRegex },
         { barcode: searchRegex },
-        { sku: searchRegex }
+        { sku: searchRegex },
+        { categoryId: { $in: matchingCategories.map((category) => category._id) } }
       ];
     }
 
@@ -327,6 +349,7 @@ export class ProductService {
     }
 
     if (updateData.name) product.name = updateData.name.trim();
+    if (updateData.catalogName !== undefined) product.catalogName = updateData.catalogName;
     if (updateData.regionalName !== undefined) product.regionalName = updateData.regionalName;
     if (updateData.brand !== undefined) product.brand = updateData.brand;
     if (updateData.sku !== undefined) product.sku = updateData.sku;

@@ -4,6 +4,7 @@ const categorySchema = new mongoose.Schema(
   {
     storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true, index: true },
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 50 },
+    searchName: { type: String, trim: true, default: null, index: true },
     slug: { type: String, required: true, lowercase: true, trim: true },
     description: { type: String, trim: true, default: null, maxlength: 200 },
     imageUrl: { type: String, default: null },

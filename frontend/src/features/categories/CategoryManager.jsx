@@ -92,29 +92,23 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
   const downloadImportTemplate = () => {
     const workbook = XLSX.utils.book_new();
-    const categoriesSheet = XLSX.utils.json_to_sheet([
-      { name: 'Atta & Flour', description: 'Flour and grains', sortOrder: 1 }
-    ]);
     const productsSheet = XLSX.utils.json_to_sheet([
       {
-        name: 'Aashirvaad Atta',
-        regionalName: '',
-        categoryName: 'Atta & Flour',
-        unit: 'KG',
-        unitQuantity: 5,
-        mrp: 350,
-        sellingPrice: 320,
-        purchasePrice: 300,
-        taxRate: 5,
-        barcode: '',
-        sku: '',
-        brand: '',
-        imageUrl: ''
+        Image: '',
+        Name: 'Aashirvaad Atta - Superior MP Whole Wheat',
+        Price: 320,
+        'Original Price': 350,
+        Quantity: '5 kg',
+        'Sub-Category': 'Atta',
+        Category: 'Atta, Rice, Oil & Dals',
+        'Hindi Name': 'Aashirvaad गेहूं का आटा',
+        'Hinglish Name': 'Aashirvaad atta MP gehu',
+        'Indian Category': 'Atta, Rice & Dal',
+        'Indian Sub-Category': 'आटा'
       }
     ]);
-    XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'Categories');
-    XLSX.utils.book_append_sheet(workbook, productsSheet, 'Products');
-    XLSX.writeFile(workbook, 'kirana-catalog-template.xlsx');
+    XLSX.utils.book_append_sheet(workbook, productsSheet, 'Indian Catalog');
+    XLSX.writeFile(workbook, 'indian-grocery-catalog-template.xlsx');
   };
 
   const parseImportPrice = (rawValue) => {
@@ -144,9 +138,10 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     };
 
     return {
-      name: String(value('Name', 'Product Name')).trim(),
-      regionalName: String(value('Regional Name', 'RegionalName')).trim(),
-      categoryName: String(value('Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
+      name: String(value('Hinglish Name', 'Name', 'Product Name')).trim(),
+      catalogName: String(value('Name', 'Product Name')).trim(),
+      regionalName: String(value('Hindi Name', 'Regional Name', 'RegionalName')).trim(),
+      categoryName: String(value('Indian Sub-Category', 'Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
       unit: unitMap[quantityUnit] || 'PIECE',
       unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,
       mrp: parseImportPrice(value('Original Price', 'MRP')),
@@ -176,6 +171,10 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
         categories: readSheet('Categories'),
         products: rawProducts.map(normalizeImportProduct)
       };
+      if (nextData.categories.length === 0) {
+        const categoryNames = [...new Set(nextData.products.map((product) => product.categoryName).filter(Boolean))];
+        nextData.categories = categoryNames.map((name, sortOrder) => ({ name, sortOrder }));
+      }
       if (nextData.categories.length === 0 && nextData.products.length === 0) {
         throw new Error('Add rows to the Categories or Products sheet before uploading.');
       }

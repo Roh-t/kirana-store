@@ -39,6 +39,7 @@ export class ProductValidator {
 
     return {
       name: data.name.trim(),
+      catalogName: data.catalogName ? data.catalogName.trim() : null,
       regionalName: data.regionalName ? data.regionalName.trim() : null,
       categoryId: data.categoryId,
       brand: data.brand ? data.brand.trim() : null,

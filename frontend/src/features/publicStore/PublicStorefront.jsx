@@ -321,6 +321,9 @@ export const PublicStorefront = ({ slug }) => {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-[11px] sm:text-xs font-bold text-gray-900 truncate">{product.name}</h3>
+                  {product.catalogName && product.catalogName !== product.name && (
+                    <p className="text-[10px] text-gray-500 truncate" title={product.catalogName}>{product.catalogName}</p>
+                  )}
                   {product.regionalName && (
                     <p className="text-xs font-semibold text-green-700 mt-0.5">{product.regionalName}</p>
                   )}

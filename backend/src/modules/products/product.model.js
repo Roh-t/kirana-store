@@ -5,6 +5,7 @@ const productSchema = new mongoose.Schema(
     storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true, index: true },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 150 },
+    catalogName: { type: String, trim: true, default: null, maxlength: 250 },
     regionalName: { type: String, trim: true, default: null },
     brand: { type: String, trim: true, default: null, maxlength: 50 },
     sku: { type: String, trim: true, uppercase: true, default: null },
@@ -34,6 +35,6 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ storeId: 1, barcode: 1 }, { sparse: true });
 productSchema.index({ storeId: 1, sku: 1 }, { sparse: true });
 productSchema.index({ storeId: 1, categoryId: 1, isActive: 1, isAvailable: 1 });
-productSchema.index({ name: 'text', regionalName: 'text', brand: 'text' });
+productSchema.index({ name: 'text', catalogName: 'text', regionalName: 'text', brand: 'text' });
 
 export const Product = mongoose.model('Product', productSchema);

@@ -1,12 +1,13 @@
 import { Category } from './category.model.js';
 import { ApiError } from '../../utils/apiError.js';
+import { createSearchAliases } from '../../utils/indianSearch.js';
 
 export class CategoryService {
   static generateCategorySlug(name) {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
       .replace(/\s+/g, '-');
   }
 
@@ -22,6 +23,7 @@ export class CategoryService {
     const category = await Category.create({
       storeId,
       name: validatedData.name,
+      searchName: createSearchAliases(validatedData.name),
       slug,
       description: validatedData.description,
       imageUrl: validatedData.imageUrl,
@@ -63,6 +65,7 @@ export class CategoryService {
         throw ApiError.conflict(`Category "${updateData.name}" already exists in your store.`);
       }
       category.name = updateData.name.trim();
+      category.searchName = createSearchAliases(category.name);
       category.slug = newSlug;
     }
 
