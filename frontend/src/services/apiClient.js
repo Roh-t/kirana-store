@@ -4,7 +4,7 @@ import axios from 'axios';
 const LIVE_BACKEND_URL = 'https://kirana-store-backend-ula5.onrender.com/api/v1'; 
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || LIVE_BACKEND_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5000/api/v1' : LIVE_BACKEND_URL),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
