@@ -8,9 +8,9 @@ export class MasterCatalogService {
     const normalizedSearch = String(search).trim();
     if (normalizedSearch.length < 2) return [];
 
-    const searchValues = [...new Set([normalizedSearch, transliterateHindi(normalizedSearch)])
+    const searchValues = [...new Set([normalizedSearch, transliterateHindi(normalizedSearch)])]
       .map((value) => value.trim())
-      .filter(Boolean)];
+      .filter(Boolean);
     const searchRegexes = searchValues.map((value) => new RegExp(escapeRegex(value), 'i'));
     return MasterProduct.find({
       isActive: true,
