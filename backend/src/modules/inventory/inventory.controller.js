@@ -19,13 +19,14 @@ export class InventoryController {
 
   static async getInventory(req, res, next) {
     try {
-      const { inventory, pagination } = await InventoryService.getInventoryByStore(req.storeId, req.query);
+      const { inventory, pagination, categorySummary } = await InventoryService.getInventoryByStore(req.storeId, req.query);
 
       return ApiResponse.paginated(res, {
         statusCode: 200,
         message: 'Inventory balances retrieved successfully',
         data: inventory,
-        pagination
+        pagination,
+        meta: { categorySummary }
       });
     } catch (error) {
       next(error);

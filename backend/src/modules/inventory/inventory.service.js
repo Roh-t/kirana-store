@@ -1,6 +1,7 @@
 import { Inventory } from './inventory.model.js';
 import { InventoryTransaction } from './inventoryTransaction.model.js';
 import { Product } from '../products/product.model.js';
+import { Category } from '../categories/category.model.js';
 import { ApiError } from '../../utils/apiError.js';
 
 export class InventoryService {
@@ -32,7 +33,7 @@ export class InventoryService {
   }
 
   static async getInventoryByStore(storeId, filters = {}) {
-    const { page = 1, limit = 20, search, stockFilter, stockLimit } = filters;
+    const { page = 1, limit = 20, search, stockFilter, stockLimit, categoryName } = filters;
     const query = { storeId };
 
     if (filters.lowStock === 'true') {
@@ -51,6 +52,15 @@ export class InventoryService {
       const searchRegex = new RegExp(search.trim(), 'i');
       productQuery.$or = [{ name: searchRegex }, { regionalName: searchRegex }];
     }
+    const categorySummaryProducts = await Product.find(productQuery).select('_id');
+    if (categoryName && categoryName.trim()) {
+      const category = await Category.findOne({
+        storeId,
+        isDeleted: false,
+        name: new RegExp(`^${categoryName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      }).select('_id');
+      productQuery.categoryId = category?._id || null;
+    }
 
     const matchingProducts = await Product.find(productQuery).select('_id');
     query.productId = { $in: matchingProducts.map((product) => product._id) };
@@ -58,7 +68,7 @@ export class InventoryService {
     const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const skip = (pageNumber - 1) * pageSize;
 
-    const [inventoryRecords, totalRecords] = await Promise.all([
+    const [inventoryRecords, totalRecords, categoryRecords] = await Promise.all([
       Inventory.find(query)
       .populate({
         path: 'productId',
@@ -68,11 +78,32 @@ export class InventoryService {
       .sort({ stockQuantity: 1 })
       .skip(skip)
       .limit(pageSize),
-      Inventory.countDocuments(query)
+      Inventory.countDocuments(query),
+      Inventory.find({
+        ...query,
+        productId: { $in: categorySummaryProducts.map((product) => product._id) }
+      })
+        .populate({
+          path: 'productId',
+          select: 'categoryId',
+          populate: { path: 'categoryId', select: 'name' }
+        })
+        .select('productId')
+        .lean()
     ]);
+
+    const categoryCounts = categoryRecords.reduce((counts, record) => {
+      const name = record.productId?.categoryId?.name || 'Other items';
+      counts[name] = (counts[name] || 0) + 1;
+      return counts;
+    }, {});
+    const categorySummary = Object.entries(categoryCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((first, second) => first.name.localeCompare(second.name));
 
     return {
       inventory: inventoryRecords.filter((inv) => inv.productId),
+      categorySummary,
       pagination: {
         totalRecords,
         currentPage: pageNumber,

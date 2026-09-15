@@ -20,6 +20,8 @@ export const InventoryManager = ({ storeId }) => {
   const [stockLimit, setStockLimit] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0 });
+  const [categorySummary, setCategorySummary] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [partialSaleSavingId, setPartialSaleSavingId] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
@@ -36,9 +38,11 @@ export const InventoryManager = ({ storeId }) => {
         limit: 20,
         ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
         stockFilter,
+        ...(selectedCategory ? { categoryName: selectedCategory } : {}),
         ...(stockFilter === 'BELOW' && stockLimit !== '' ? { stockLimit } : {})
       });
       setInventory(Array.isArray(res.data) ? res.data : []);
+      setCategorySummary(Array.isArray(res.meta?.categorySummary) ? res.meta.categorySummary : []);
       setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: res.data?.length || 0 });
     } catch (err) {
       console.error('Failed to load inventory', err);
@@ -51,7 +55,7 @@ export const InventoryManager = ({ storeId }) => {
     if (storeId) {
       fetchInventory();
     }
-  }, [storeId, currentPage, searchQuery, stockFilter, stockLimit]);
+  }, [storeId, currentPage, searchQuery, stockFilter, stockLimit, selectedCategory]);
 
   const updateSearch = (value) => {
     setSearchQuery(value);
@@ -60,6 +64,15 @@ export const InventoryManager = ({ storeId }) => {
 
   const updateStockFilter = (value) => {
     setStockFilter(value);
+    setCurrentPage(1);
+  };
+
+  const selectCategory = (categoryName) => {
+    setSelectedCategory((current) => {
+      const nextCategory = current === categoryName ? '' : categoryName;
+      setExpandedCategories(nextCategory ? { [nextCategory]: true } : {});
+      return nextCategory;
+    });
     setCurrentPage(1);
   };
 
@@ -327,6 +340,43 @@ export const InventoryManager = ({ storeId }) => {
           )}
         </div>
       </div>
+
+      {categorySummary.length > 0 && (
+        <div className="rounded-2xl border border-green-100 bg-green-50/40 p-2.5">
+          <div className="flex items-center justify-between gap-2 px-1 mb-2">
+            <p className="text-[11px] font-extrabold text-gray-700">Indian sub-categories</p>
+            {selectedCategory && (
+              <button
+                type="button"
+                onClick={() => selectCategory(selectedCategory)}
+                className="text-[10px] font-bold text-green-700 hover:text-green-900"
+              >
+                Show all
+              </button>
+            )}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            {categorySummary.map((category) => (
+              <button
+                type="button"
+                key={category.name}
+                onClick={() => selectCategory(category.name)}
+                className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-left transition ${
+                  selectedCategory === category.name
+                    ? 'border-green-600 bg-green-600 text-white'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-green-300'
+                }`}
+                aria-pressed={selectedCategory === category.name}
+              >
+                <span className="block text-[11px] font-extrabold">{category.name}</span>
+                <span className={`text-[10px] font-semibold ${selectedCategory === category.name ? 'text-green-50' : 'text-gray-400'}`}>
+                  {category.count} items
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="py-6 text-center text-xs text-gray-400 font-bold">Loading stock balances...</div>
