@@ -340,6 +340,11 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
               </div>
             )}
 
+            {isImporting && (
+              <div className="p-2.5 bg-blue-50 border border-blue-100 text-blue-800 text-xs rounded-xl font-medium">
+                Large catalog import is processing. Please keep this window open; 33,000 products can take a few minutes.
+              </div>
+            )}
             {importError && <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl font-medium">{importError}</div>}
             {importResult && (
               <div className="bg-green-50 border border-green-200 text-green-900 rounded-xl text-xs">
