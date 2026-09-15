@@ -126,6 +126,13 @@ export const PublicStorefront = ({ slug }) => {
           </div>
           <h3 className="text-base font-bold text-gray-900">Store Currently Offline</h3>
           <p className="text-xs text-gray-500 mt-1">{error}</p>
+          <button
+            type="button"
+            onClick={loadStorefront}
+            className="mt-4 w-full rounded-xl bg-green-600 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-green-700"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );

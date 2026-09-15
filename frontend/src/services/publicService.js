@@ -1,19 +1,26 @@
 import apiClient from './apiClient';
 
+const PUBLIC_REQUEST_TIMEOUT_MS = 45000;
+
+const publicGet = (url, config = {}) => apiClient.get(url, {
+  ...config,
+  timeout: PUBLIC_REQUEST_TIMEOUT_MS
+});
+
 export const publicService = {
   async getPublicStore(slug) {
-    return apiClient.get(`/public/stores/${slug}`);
+    return publicGet(`/public/stores/${slug}`);
   },
 
   async getPublicCategories(slug) {
-    return apiClient.get(`/public/stores/${slug}/categories`);
+    return publicGet(`/public/stores/${slug}/categories`);
   },
 
   async getPublicCatalog(slug, params = {}) {
-    return apiClient.get(`/public/stores/${slug}/catalog`, { params });
+    return publicGet(`/public/stores/${slug}/catalog`, { params });
   },
 
   async getCustomerOrders(slug, phone) {
-    return apiClient.get(`/public/stores/${slug}/customer-orders/${phone}`);
+    return publicGet(`/public/stores/${slug}/customer-orders/${phone}`);
   }
 };
