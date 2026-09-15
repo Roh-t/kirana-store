@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
-import { Warehouse, Plus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { Warehouse, Plus, Minus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -25,6 +25,8 @@ export const InventoryManager = ({ storeId }) => {
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [adjustingStockId, setAdjustingStockId] = useState(null);
 
   const fetchInventory = async () => {
     try {
@@ -163,6 +165,45 @@ export const InventoryManager = ({ storeId }) => {
 
   const lowStockCount = inventory.filter((inv) => inv.stockQuantity <= inv.reorderPoint).length;
   const filteredInventory = inventory;
+  const groupedInventory = filteredInventory.reduce((groups, item) => {
+    const categoryName = item.productId?.categoryId?.name || 'Other items';
+    if (!groups[categoryName]) groups[categoryName] = [];
+    groups[categoryName].push(item);
+    return groups;
+  }, {});
+
+  const toggleCategory = (categoryName) => {
+    setExpandedCategories((previous) => ({
+      ...previous,
+      [categoryName]: !previous[categoryName]
+    }));
+  };
+
+  const quickAdjustStock = async (item, quantityDelta) => {
+    if (adjustingStockId || (quantityDelta < 0 && item.stockQuantity <= 0)) return;
+
+    setError(null);
+    setAdjustingStockId(item._id);
+    try {
+      const res = await inventoryService.adjustStock(storeId, {
+        productId: item.productId._id,
+        quantityDelta,
+        type: quantityDelta > 0 ? 'PURCHASE' : 'CORRECTION',
+        reason: quantityDelta > 0 ? 'Quick restock' : 'Quick stock reduction'
+      });
+      const newStock = res.data?.inventory?.stockQuantity;
+      setInventory((previous) => previous.map((entry) => (
+        entry._id === item._id
+          ? { ...entry, stockQuantity: Number.isFinite(Number(newStock)) ? Number(newStock) : entry.stockQuantity + quantityDelta }
+          : entry
+      )));
+      setSummary(null);
+    } catch (err) {
+      setError(err.message || 'Failed to update stock');
+    } finally {
+      setAdjustingStockId(null);
+    }
+  };
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs space-y-3">
@@ -298,8 +339,30 @@ export const InventoryManager = ({ storeId }) => {
           <p className="text-xs text-gray-500 font-bold">No items match this search or filter</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredInventory.map((inv) => {
+        <div className="space-y-3">
+          {Object.entries(groupedInventory).sort(([first], [second]) => first.localeCompare(second)).map(([categoryName, categoryItems]) => {
+            const isExpanded = expandedCategories[categoryName] === true;
+
+            return (
+              <section key={categoryName} className="rounded-2xl border border-gray-200 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(categoryName)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-50 hover:bg-green-50 text-left transition"
+                  aria-expanded={isExpanded}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="font-extrabold text-xs text-gray-900 truncate">{categoryName}</span>
+                    <span className="shrink-0 rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                      {categoryItems.length} item{categoryItems.length === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                </button>
+
+                {isExpanded && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3 bg-white">
+                    {categoryItems.map((inv) => {
             const product = inv.productId;
             const isLow = inv.stockQuantity <= inv.reorderPoint;
             const packSize = Number(product?.unitQuantity) || 1;
@@ -309,9 +372,9 @@ export const InventoryManager = ({ storeId }) => {
 
             return (
               <div key={inv._id} className="p-3 rounded-2xl border border-gray-100 bg-gray-50/40 flex flex-col gap-3">
-                <div className="w-full h-28 shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
+                <div className="w-full h-20 shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
                   {product?.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-1" loading="lazy" />
                   ) : (
                     <Package className="w-5 h-5 text-gray-300" />
                   )}
@@ -357,6 +420,29 @@ export const InventoryManager = ({ storeId }) => {
                   </div>
 
                   <div className="flex items-center gap-1">
+                    <div className="flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => quickAdjustStock(inv, -1)}
+                        disabled={adjustingStockId === inv._id || inv.stockQuantity <= 0}
+                        className="p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Decrease stock by 1 item"
+                        aria-label={`Decrease ${product?.name} stock`}
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="min-w-7 text-center text-[11px] font-black text-gray-800">{inv.stockQuantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => quickAdjustStock(inv, 1)}
+                        disabled={adjustingStockId === inv._id}
+                        className="p-1.5 text-green-700 hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Increase stock by 1 item"
+                        aria-label={`Increase ${product?.name} stock`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <button
                       onClick={() => openAdjustModal(inv, 'PURCHASE')}
                       className="px-2.5 py-1.5 bg-green-50 text-green-700 active:bg-green-100 border border-green-200 rounded-xl text-xs font-extrabold flex items-center gap-1 transition active:scale-95"
@@ -374,6 +460,11 @@ export const InventoryManager = ({ storeId }) => {
                   </div>
                 </div>
               </div>
+            );
+                    })}
+                  </div>
+                )}
+              </section>
             );
           })}
         </div>
