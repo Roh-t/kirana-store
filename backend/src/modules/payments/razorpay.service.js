@@ -11,8 +11,8 @@ export class RazorpayService {
     if (!store) throw ApiError.notFound('Store not found');
 
     const planPrices = {
-      PRO: 499, // ₹499/ month
-      PREMIUM: 999// ₹999/ month
+      PRO: 1, // ₹1/month (temporary test pricing)
+      PREMIUM: 2 // ₹2/month (temporary test pricing)
     };
 
     const priceInRupees = planPrices[plan.toUpperCase()] || 1;
@@ -88,7 +88,7 @@ export class RazorpayService {
       storeId,
       orderId: storeId, // SaaS plan payment
       paymentNumber: `PAY-SAAS-${Date.now().toString().slice(-6)}`,
-      amount: plan.toUpperCase() === 'PREMIUM' ? 999 : 499,
+      amount: plan.toUpperCase() === 'PREMIUM' ? 2 : 1,
       method: 'ONLINE',
       status: 'SUCCESS',
       gateway: 'RAZORPAY',
