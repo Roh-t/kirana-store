@@ -50,7 +50,19 @@ export class InventoryService {
     const productQuery = { storeId, isDeleted: false };
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      productQuery.$or = [{ name: searchRegex }, { regionalName: searchRegex }];
+      const matchingSearchCategories = await Category.find({
+        storeId,
+        isDeleted: false,
+        $or: [{ name: searchRegex }, { searchName: searchRegex }]
+      }).select('_id');
+      productQuery.$or = [
+        { name: searchRegex },
+        { catalogName: searchRegex },
+        { regionalName: searchRegex },
+        { brand: searchRegex },
+        { barcode: searchRegex },
+        { categoryId: { $in: matchingSearchCategories.map((category) => category._id) } }
+      ];
     }
     const categorySummaryProducts = await Product.find(productQuery).select('_id');
     if (categoryName && categoryName.trim()) {
@@ -72,7 +84,7 @@ export class InventoryService {
       Inventory.find(query)
       .populate({
         path: 'productId',
-        select: 'name regionalName unit unitQuantity allowPartialSale mrp sellingPrice barcode imageUrl isAvailable categoryId',
+        select: 'name catalogName regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice barcode imageUrl isAvailable categoryId',
         populate: { path: 'categoryId', select: 'name' }
       })
       .sort({ stockQuantity: 1 })
