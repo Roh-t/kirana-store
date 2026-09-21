@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { notificationService } from '../../services/notificationService';
 import { Bell, ShoppingBag, AlertTriangle, Check, CheckCheck, X } from 'lucide-react';
 
@@ -7,6 +7,7 @@ export const NotificationFeed = ({ storeId }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const notificationRef = useRef(null);
 
   const fetchNotifications = async () => {
     try {
@@ -29,6 +30,21 @@ export const NotificationFeed = ({ storeId }) => {
     }
   }, [storeId]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleOutsidePointerDown = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, [isOpen]);
+
   const handleMarkRead = async (id) => {
     try {
       await notificationService.markAsRead(storeId, id);
@@ -48,7 +64,7 @@ export const NotificationFeed = ({ storeId }) => {
   };
 
   return (
-    <div className="relative">
+    <div ref={notificationRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition"
