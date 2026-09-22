@@ -211,27 +211,19 @@ export class ProductService {
       updatedBy: userId
     }));
     const createdProducts = productsToCreate.length ? await Product.insertMany(productsToCreate, { ordered: true }) : [];
-    if (createdProducts.length > 0) {
-      await Inventory.insertMany(createdProducts.map((product) => ({
-        storeId,
-        productId: product._id,
-        stockQuantity: 0,
-        reservedQuantity: 0,
-        reorderPoint: 5,
-        trackInventory: true
-      })));
-    }
-
-    const activeProducts = await Product.find({ storeId, isDeleted: false }).select('_id').lean();
-    if (activeProducts.length > 0) {
+    const productsNeedingInventory = [
+      ...createdProducts.map((product) => product._id),
+      ...productUpdates.map((operation) => operation.updateOne.filter._id)
+    ];
+    if (productsNeedingInventory.length > 0) {
       await Inventory.bulkWrite(
-        activeProducts.map((product) => ({
+        productsNeedingInventory.map((productId) => ({
           updateOne: {
-            filter: { storeId, productId: product._id },
+            filter: { storeId, productId },
             update: {
               $setOnInsert: {
                 storeId,
-                productId: product._id,
+                productId,
                 stockQuantity: 0,
                 reservedQuantity: 0,
                 reorderPoint: 5,
