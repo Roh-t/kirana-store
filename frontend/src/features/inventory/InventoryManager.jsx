@@ -274,7 +274,7 @@ export const InventoryManager = ({ storeId }) => {
                 <p className="text-sm font-black text-gray-900">{summary.totalItems}</p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500">Total items</p>
+                <p className="text-[10px] text-gray-500">Total stock quantity</p>
                 <p className="text-sm font-black text-gray-900">{summary.totalStock}</p>
               </div>
               <button

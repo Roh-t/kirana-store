@@ -6,7 +6,46 @@ import { ApiError } from '../../utils/apiError.js';
 import { rankProducts } from '../../utils/productSearch.util.js';
 
 export class InventoryService {
+  static async ensureInventoryRecords(storeId) {
+    const [productCount, inventoryCount] = await Promise.all([
+      Product.countDocuments({ storeId, isDeleted: false }),
+      Inventory.countDocuments({ storeId })
+    ]);
+
+    if (inventoryCount >= productCount) return;
+
+    const [products, inventoryProductIds] = await Promise.all([
+      Product.find({ storeId, isDeleted: false }).select('_id').lean(),
+      Inventory.find({ storeId }).distinct('productId')
+    ]);
+    const existingIds = new Set(inventoryProductIds.map((id) => id.toString()));
+    const missingProducts = products.filter((product) => !existingIds.has(product._id.toString()));
+
+    if (missingProducts.length > 0) {
+      await Inventory.bulkWrite(
+        missingProducts.map((product) => ({
+          updateOne: {
+            filter: { storeId, productId: product._id },
+            update: {
+              $setOnInsert: {
+                storeId,
+                productId: product._id,
+                stockQuantity: 0,
+                reservedQuantity: 0,
+                reorderPoint: 5,
+                trackInventory: true
+              }
+            },
+            upsert: true
+          }
+        })),
+        { ordered: false }
+      );
+    }
+  }
+
   static async getInventorySummary(storeId) {
+    await this.ensureInventoryRecords(storeId);
     const records = await Inventory.find({ storeId })
       .select('stockQuantity reorderPoint')
       .lean();
@@ -34,6 +73,7 @@ export class InventoryService {
   }
 
   static async getInventoryByStore(storeId, filters = {}) {
+    await this.ensureInventoryRecords(storeId);
     const { page = 1, limit = 20, search, stockFilter, stockLimit, categoryName } = filters;
     const query = { storeId };
 
