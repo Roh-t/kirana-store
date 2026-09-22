@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
-import { Warehouse, Plus, Minus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { Warehouse, Plus, Minus, AlertTriangle, History, Check, X, ArrowUpRight, ArrowDownLeft, Package, Search, Filter, ChevronLeft, ChevronRight, BarChart3, ChevronDown, ChevronUp, Scale } from 'lucide-react';
 
 export const InventoryManager = ({ storeId }) => {
   const [inventory, setInventory] = useState([]);
@@ -456,6 +456,20 @@ export const InventoryManager = ({ storeId }) => {
                   <div className="flex w-full items-center gap-1.5">
                     <button
                       type="button"
+                      onClick={() => handlePartialSaleToggle(inv, !product?.allowPartialSale)}
+                      disabled={partialSaleSavingId === product?._id}
+                      className={`h-8 flex-1 rounded-xl border text-[10px] font-bold transition ${
+                        product?.allowPartialSale
+                          ? 'border-green-300 bg-green-50 text-green-700'
+                          : 'border-gray-200 text-gray-500 hover:text-green-700 hover:border-green-200'
+                      } disabled:opacity-50`}
+                      title={product?.allowPartialSale ? 'Disable partial unit selling' : 'Allow partial unit selling'}
+                    >
+                      <Scale className="inline-block mr-0.5 h-3 w-3" />
+                      {product?.allowPartialSale ? 'Partial On' : 'Partial'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openAdjustModal(inv, 'PURCHASE')}
                       className="h-8 flex-1 rounded-xl border border-gray-200 text-[10px] font-bold text-gray-500 hover:text-gray-800"
                       title="Enter a custom stock adjustment"
@@ -541,7 +555,7 @@ export const InventoryManager = ({ storeId }) => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Quantity (items / packs)
+                  Quantity ({selectedItem.productId?.allowPartialSale ? 'units / packs' : 'items / packs'})
                 </label>
                 <input
                   type="number"
@@ -554,7 +568,9 @@ export const InventoryManager = ({ storeId }) => {
                   className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold"
                 />
                 <p className="text-[10px] text-gray-400 mt-1">
-                  Enter the number of packs/items, not the total weight.
+                  {selectedItem.productId?.allowPartialSale
+                    ? 'Partial units are allowed for this item.'
+                    : 'Enter the number of packs/items, not the total weight.'}
                 </p>
               </div>
 
