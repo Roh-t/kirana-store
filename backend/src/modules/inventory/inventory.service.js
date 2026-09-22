@@ -64,7 +64,6 @@ export class InventoryService {
         { categoryId: { $in: matchingSearchCategories.map((category) => category._id) } }
       ];
     }
-    const categorySummaryProducts = await Product.find(productQuery).select('_id');
     if (categoryName && categoryName.trim()) {
       const category = await Category.findOne({
         storeId,
@@ -74,8 +73,12 @@ export class InventoryService {
       productQuery.categoryId = category?._id || null;
     }
 
-    const matchingProducts = await Product.find(productQuery).select('_id');
-    query.productId = { $in: matchingProducts.map((product) => product._id) };
+    const hasProductFilter = Boolean((search && search.trim()) || (categoryName && categoryName.trim()));
+    if (hasProductFilter) {
+      const matchingProducts = await Product.find(productQuery).select('_id');
+      query.productId = { $in: matchingProducts.map((product) => product._id) };
+    }
+    const categorySummaryProducts = await Product.find(productQuery).select('_id');
     const pageNumber = Math.max(Number(page) || 1, 1);
     const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const skip = (pageNumber - 1) * pageSize;
