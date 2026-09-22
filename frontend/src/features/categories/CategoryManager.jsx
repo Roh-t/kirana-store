@@ -184,9 +184,9 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
     try {
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-      const sheetName = workbook.SheetNames.find((item) => item === 'Clean Database');
+      const sheetName = workbook.SheetNames[0];
       if (!sheetName) {
-        throw new Error('The workbook must contain a sheet named "Clean Database".');
+        throw new Error('The workbook must contain at least one worksheet.');
       }
 
       const sheet = workbook.Sheets[sheetName];
@@ -194,7 +194,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       const hasExactColumns = IMPORT_COLUMNS.length === headerRow.length
         && IMPORT_COLUMNS.every((column, index) => headerRow[index] === column);
       if (!hasExactColumns) {
-        throw new Error(`Use the products format only. Required columns: ${IMPORT_COLUMNS.join(', ')}`);
+        throw new Error(`Use the products column format. Required columns: ${IMPORT_COLUMNS.join(', ')}`);
       }
 
       const rawProducts = XLSX.utils.sheet_to_json(sheet, { defval: '' });
@@ -205,7 +205,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       const categoryNames = [...new Set(nextData.products.map((product) => product.categoryName).filter(Boolean))];
       nextData.categories = categoryNames.map((name, sortOrder) => ({ name, sortOrder }));
       if (nextData.products.length === 0) {
-        throw new Error('Add product rows to the Clean Database sheet before uploading.');
+        throw new Error('Add product rows to the worksheet before uploading.');
       }
       setImportFile(file);
       setImportData(nextData);
@@ -298,7 +298,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
             </div>
 
             <div className="rounded-2xl bg-green-50 border border-green-100 p-3 space-y-2">
-              <p className="text-xs text-green-900 font-semibold">Only the products.xlsx column format is supported.</p>
+              <p className="text-xs text-green-900 font-semibold">Any Excel filename and worksheet name is accepted. Keep the required columns in order.</p>
               <button type="button" onClick={downloadImportTemplate} className="text-xs font-bold text-green-700 flex items-center gap-1">
                 <Download className="w-3.5 h-3.5" /> Download Excel template
               </button>
