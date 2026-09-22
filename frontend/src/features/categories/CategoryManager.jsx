@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
-import { Tags, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Tags, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2, ExternalLink } from 'lucide-react';
 
 const ITEM_LIBRARY_URL = 'https://kirana-link.onrender.com/';
 const IMPORT_COLUMNS = [
@@ -286,31 +286,6 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
                 {cat.description && <p className="text-[11px] text-gray-500 truncate mt-0.5">{cat.description}</p>}
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => handleToggleActive(cat)}
-                  className={`p-1.5 rounded-lg border text-xs ${
-                    cat.isActive ? 'text-green-700 border-green-200 hover:bg-green-50' : 'text-gray-400 border-gray-200'
-                  }`}
-                  title={cat.isActive ? 'Hide Category' : 'Show Category'}
-                >
-                  {cat.isActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                </button>
-                <button
-                  onClick={() => openEdit(cat)}
-                  className="p-1.5 rounded-lg border border-gray-200 text-gray-600 active:bg-gray-100"
-                  title="Edit Category"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(cat._id)}
-                  className="p-1.5 rounded-lg border border-red-200 text-red-600 active:bg-red-50"
-                  title="Delete Category"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           ))}
         </div>

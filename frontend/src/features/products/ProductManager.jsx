@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import { adminService } from '../../services/adminService';
-import { Package, Search, Edit2, Trash2, Check, X, Barcode, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Search, Check, X, Barcode, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged }) => {
   const [products, setProducts] = useState([]);
@@ -286,22 +286,6 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => openEdit(p)}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-600 active:bg-gray-100"
-                  title="Edit Product"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="p-2 rounded-lg border border-red-200 text-red-600 active:bg-red-50"
-                  title="Delete Product"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           ))}
         </div>
