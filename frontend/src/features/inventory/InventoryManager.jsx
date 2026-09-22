@@ -16,6 +16,7 @@ export const InventoryManager = ({ storeId }) => {
   const [historyItem, setHistoryItem] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [stockFilter, setStockFilter] = useState('ALL');
   const [stockLimit, setStockLimit] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,21 +31,22 @@ export const InventoryManager = ({ storeId }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
 
-  const fetchInventory = async () => {
+  const fetchInventory = async (signal) => {
     try {
       setLoading(true);
       const res = await inventoryService.getInventory(storeId, {
         page: currentPage,
         limit: 20,
-        ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+        ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
         stockFilter,
         ...(selectedCategory ? { categoryName: selectedCategory } : {}),
         ...(stockFilter === 'BELOW' && stockLimit !== '' ? { stockLimit } : {})
-      });
+      }, { signal });
       setInventory(Array.isArray(res.data) ? res.data : []);
       setCategorySummary(Array.isArray(res.meta?.categorySummary) ? res.meta.categorySummary : []);
       setPagination(res.pagination || { currentPage, totalPages: 1, totalRecords: res.data?.length || 0 });
     } catch (err) {
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
       console.error('Failed to load inventory', err);
     } finally {
       setLoading(false);
@@ -52,10 +54,17 @@ export const InventoryManager = ({ storeId }) => {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const controller = new AbortController();
     if (storeId) {
-      fetchInventory();
+      fetchInventory(controller.signal);
     }
-  }, [storeId, currentPage, searchQuery, stockFilter, stockLimit, selectedCategory]);
+    return () => controller.abort();
+  }, [storeId, currentPage, debouncedSearch, stockFilter, stockLimit, selectedCategory]);
 
   const updateSearch = (value) => {
     setSearchQuery(value);

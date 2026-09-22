@@ -7,10 +7,11 @@ export const inventoryService = {
     });
   },
 
-  async getInventory(storeId, params = {}) {
+  async getInventory(storeId, params = {}, config = {}) {
     return apiClient.get('/inventory', {
       headers: { 'X-Store-Id': storeId },
-      params
+      params,
+      ...config
     });
   },
 

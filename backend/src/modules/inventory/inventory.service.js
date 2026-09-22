@@ -3,6 +3,7 @@ import { InventoryTransaction } from './inventoryTransaction.model.js';
 import { Product } from '../products/product.model.js';
 import { Category } from '../categories/category.model.js';
 import { ApiError } from '../../utils/apiError.js';
+import { rankProducts } from '../../utils/productSearch.util.js';
 
 export class InventoryService {
   static async getInventorySummary(storeId) {
@@ -48,22 +49,6 @@ export class InventoryService {
     }
 
     const productQuery = { storeId, isDeleted: false };
-    if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      const matchingSearchCategories = await Category.find({
-        storeId,
-        isDeleted: false,
-        $or: [{ name: searchRegex }, { searchName: searchRegex }]
-      }).select('_id');
-      productQuery.$or = [
-        { name: searchRegex },
-        { catalogName: searchRegex },
-        { regionalName: searchRegex },
-        { brand: searchRegex },
-        { barcode: searchRegex },
-        { categoryId: { $in: matchingSearchCategories.map((category) => category._id) } }
-      ];
-    }
     if (categoryName && categoryName.trim()) {
       const category = await Category.findOne({
         storeId,
@@ -75,7 +60,14 @@ export class InventoryService {
 
     const hasProductFilter = Boolean((search && search.trim()) || (categoryName && categoryName.trim()));
     if (hasProductFilter) {
-      const matchingProducts = await Product.find(productQuery).select('_id');
+      const searchableProducts = await Product.find(productQuery)
+        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId')
+        .populate('categoryId', 'name')
+        .lean();
+      const matchingProducts = rankProducts(
+        searchableProducts.map((product) => ({ ...product, categoryName: product.categoryId?.name || null })),
+        search
+      );
       query.productId = { $in: matchingProducts.map((product) => product._id) };
     }
     const categorySummaryProducts = await Product.find(productQuery).select('_id');

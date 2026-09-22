@@ -6,7 +6,7 @@ import { Order } from '../orders/order.model.js';
 import { Customer } from '../customers/customer.model.js';
 import { ApiError } from '../../utils/apiError.js';
 import { getStoreAvailability } from '../stores/storeHours.util.js';
-import { transliterateHindi } from '../../utils/indianSearch.js';
+import { rankProducts } from '../../utils/productSearch.util.js';
 
 export class PublicService {
   static async getPublicStore(slug) {
@@ -53,25 +53,8 @@ export class PublicService {
       }
     }
 
-    if (search && search.trim().length > 0) {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      const transliteratedSearchRegex = new RegExp(transliterateHindi(search.trim()), 'i');
-      const matchingCategories = await Category.find({
-        storeId: store._id,
-        isDeleted: false,
-        $or: [{ name: searchRegex }, { searchName: searchRegex }, { searchName: transliteratedSearchRegex }]
-      }).select('_id');
-      query.$or = [
-        { name: searchRegex },
-        { catalogName: searchRegex },
-        { regionalName: searchRegex },
-        { brand: searchRegex },
-        { categoryId: { $in: matchingCategories.map((category) => category._id) } }
-      ];
-    }
-
     const products = await Product.find(query)
-      .select('name catalogName regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
+      .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
       .populate('categoryId', 'name slug')
       .sort({ createdAt: -1 });
 
@@ -85,15 +68,19 @@ export class PublicService {
       stockMap.set(inv.productId.toString(), inv.stockQuantity);
     });
 
-    const catalog = products.map((p) => {
+    const searchableProducts = products.map((product) => ({
+      ...product.toObject(),
+      categoryName: product.categoryId?.name || null
+    }));
+    const rankedProducts = rankProducts(searchableProducts, search);
+    const catalog = rankedProducts.map((p) => {
       const stock = stockMap.get(p._id.toString()) ?? 0;
       return {
-        ...p.toObject(),
-        categoryName: p.categoryId?.name || null,
+        ...p,
         stockQuantity: stock,
         inStock: stock > 0
       };
-    });
+    }).filter((product) => product.stockQuantity > 0);
 
     return {
       store,

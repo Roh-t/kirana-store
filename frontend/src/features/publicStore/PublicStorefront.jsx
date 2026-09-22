@@ -32,18 +32,19 @@ export const PublicStorefront = ({ slug }) => {
   const { items, totalItemsCount, subTotal, updateQuantity, setQuantity } = useCart();
   const { user } = useAuth();
 
-  const loadStorefront = async () => {
+  const loadStorefront = async (signal) => {
     try {
       setLoading(true);
       setError(null);
       const [catRes, catalogRes] = await Promise.all([
-        publicService.getPublicCategories(slug),
-        publicService.getPublicCatalog(slug, { categorySlug: selectedCategory, search })
+        publicService.getPublicCategories(slug, { signal }),
+        publicService.getPublicCatalog(slug, { categorySlug: selectedCategory, search }, { signal })
       ]);
       setCategories(catRes.data);
       setStore(catalogRes.data.store);
       setCatalog(catalogRes.data.catalog);
     } catch (err) {
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
       setError(err.message || 'Store not found or offline');
     } finally {
       setLoading(false);
@@ -51,9 +52,13 @@ export const PublicStorefront = ({ slug }) => {
   };
 
   useEffect(() => {
-    if (slug) {
-      loadStorefront();
-    }
+    if (!slug) return undefined;
+    const controller = new AbortController();
+    const timer = setTimeout(() => loadStorefront(controller.signal), 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [slug, selectedCategory, search]);
 
   const nextOpeningLabel = store?.availability?.nextOpeningAt

@@ -12,12 +12,12 @@ export const publicService = {
     return publicGet(`/public/stores/${slug}`);
   },
 
-  async getPublicCategories(slug) {
-    return publicGet(`/public/stores/${slug}/categories`);
+  async getPublicCategories(slug, config = {}) {
+    return publicGet(`/public/stores/${slug}/categories`, config);
   },
 
-  async getPublicCatalog(slug, params = {}) {
-    return publicGet(`/public/stores/${slug}/catalog`, { params });
+  async getPublicCatalog(slug, params = {}, config = {}) {
+    return publicGet(`/public/stores/${slug}/catalog`, { params, ...config });
   },
 
   async getCustomerOrders(slug, phone) {
