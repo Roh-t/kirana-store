@@ -57,23 +57,29 @@ export class PublicService {
       }
     }
 
+    const availableInventories = await Inventory.find({
+      storeId: store._id,
+      stockQuantity: { $gt: 0 }
+    }).select('productId stockQuantity reorderPoint').lean();
+    const availableProductIds = availableInventories.map((inventory) => inventory.productId);
+    if (availableProductIds.length === 0) {
+      return { store, catalog: [] };
+    }
+    query._id = { $in: availableProductIds };
+
     const products = await Product.find(query)
       .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand unit unitQuantity allowPartialSale mrp sellingPrice taxRate imageUrl categoryId barcode')
       .populate('categoryId', 'name slug')
-      .sort({ createdAt: -1 });
-
-    const productIds = products.map((p) => p._id);
-    const inventories = await Inventory.find({ storeId: store._id, productId: { $in: productIds } }).select(
-      'productId stockQuantity reorderPoint'
-    );
+      .sort({ createdAt: -1 })
+      .lean();
 
     const stockMap = new Map();
-    inventories.forEach((inv) => {
+    availableInventories.forEach((inv) => {
       stockMap.set(inv.productId.toString(), inv.stockQuantity);
     });
 
     const searchableProducts = products.map((product) => ({
-      ...product.toObject(),
+      ...product,
       categoryName: product.categoryId?.name || null
     }));
     const rankedProducts = rankProducts(searchableProducts, search);
