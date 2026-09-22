@@ -263,31 +263,12 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
       {loading ? (
         <div className="py-6 text-center text-xs text-gray-400 font-bold">Loading categories...</div>
-      ) : categories.length === 0 ? (
-        <div className="py-6 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-4">
-          <p className="text-xs text-gray-500 font-bold">No categories added</p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {categories.map((cat) => (
-            <div
-              key={cat._id}
-              className={`p-3 rounded-2xl border flex items-center justify-between transition ${
-                cat.isActive ? 'bg-white border-gray-200/80' : 'bg-gray-50 border-gray-200 opacity-60'
-              }`}
-            >
-              <div className="min-w-0 flex-1 pr-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-xs sm:text-sm text-gray-900 truncate">{cat.name}</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 bg-gray-100 text-gray-600 rounded-md">
-                    {cat.slug}
-                  </span>
-                </div>
-                {cat.description && <p className="text-[11px] text-gray-500 truncate mt-0.5">{cat.description}</p>}
-              </div>
-
-            </div>
-          ))}
+        <div className="rounded-2xl border border-green-100 bg-green-50/60 p-4 text-center">
+          <strong className="block text-3xl font-black text-green-800">{categories.length}</strong>
+          <span className="text-xs font-bold text-green-900">
+            {categories.length === 1 ? 'category' : 'categories'} in your catalog
+          </span>
         </div>
       )}
 

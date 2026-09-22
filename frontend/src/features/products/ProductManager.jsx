@@ -6,6 +6,7 @@ import { Package, Search, Check, X, Barcode, Sparkles, ChevronDown, ChevronUp } 
 
 export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged }) => {
   const [products, setProducts] = useState([]);
+  const [productCount, setProductCount] = useState(0);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +46,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
         categoryService.getCategories(storeId)
       ]);
       setProducts(prodRes.data);
+      setProductCount(prodRes.pagination?.totalRecords ?? prodRes.data.length);
       setCategories(catRes.data);
     } catch (err) {
       console.error('Failed to load catalog data', err);
@@ -227,67 +229,14 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
 
       </div>
 
-      {/* Search & Category Filter Bar */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search catalog..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-2.5 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 focus:bg-white"
-          />
-        </div>
-
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-2.5 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white font-bold text-gray-700 max-w-32.5"
-        >
-          <option value="">All Categories</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Mobile Product List */}
       {loading ? (
         <div className="py-6 text-center text-xs text-gray-400 font-bold">Loading product catalog...</div>
-      ) : products.length === 0 ? (
-        <div className="py-6 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-4">
-          <p className="text-xs text-gray-500 font-bold">No products found in catalog</p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {products.map((p) => (
-            <div key={p._id} className="p-3 rounded-2xl border border-gray-200/80 bg-white flex items-center justify-between gap-2">
-              <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" /> : <Package className="w-5 h-5 text-gray-300" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">{p.name}</h4>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-gray-100 text-gray-700 rounded-md shrink-0">
-                    {p.unitQuantity} {p.unit}
-                  </span>
-                </div>
-
-                {p.regionalName && <p className="text-xs font-bold text-green-700 truncate">{p.regionalName}</p>}
-
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-xs sm:text-sm font-black text-green-700">₹{p.sellingPrice}</span>
-                  {p.mrp > p.sellingPrice && (
-                    <span className="text-[10px] text-gray-400 line-through">MRP ₹{p.mrp}</span>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          ))}
+        <div className="rounded-2xl border border-green-100 bg-green-50/60 p-4 text-center">
+          <strong className="block text-3xl font-black text-green-800">{productCount}</strong>
+          <span className="text-xs font-bold text-green-900">
+            {productCount === 1 ? 'item' : 'items'} in your catalog
+          </span>
         </div>
       )}
 
