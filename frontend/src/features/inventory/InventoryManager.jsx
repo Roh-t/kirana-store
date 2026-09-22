@@ -389,30 +389,8 @@ export const InventoryManager = ({ storeId }) => {
           <p className="text-xs text-gray-500 font-bold">No items match this search or filter</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {Object.entries(groupedInventory).sort(([first], [second]) => first.localeCompare(second)).map(([categoryName, categoryItems]) => {
-            const isExpanded = expandedCategories[categoryName] === true;
-
-            return (
-              <section key={categoryName} className="rounded-2xl border border-gray-200 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(categoryName)}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-50 hover:bg-green-50 text-left transition"
-                  aria-expanded={isExpanded}
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className="font-extrabold text-xs text-gray-900 truncate">{categoryName}</span>
-                    <span className="shrink-0 rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
-                      {categoryItems.length} item{categoryItems.length === 1 ? '' : 's'}
-                    </span>
-                  </span>
-                  {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-                </button>
-
-                {isExpanded && (
-                  <div className="divide-y divide-gray-100 bg-white">
-                    {categoryItems.map((inv) => {
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          {filteredInventory.map((inv) => {
             const product = inv.productId;
             const isLow = inv.stockQuantity <= inv.reorderPoint;
             const packSize = Number(product?.unitQuantity) || 1;
@@ -420,94 +398,76 @@ export const InventoryManager = ({ storeId }) => {
             const totalQuantity = inv.stockQuantity * packSize;
 
             return (
-              <div key={inv._id} className="p-2.5 sm:p-3 flex items-center gap-2.5 hover:bg-green-50/30 transition">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+              <div key={inv._id} className="rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm hover:border-green-300 transition">
+                <div className="h-24 w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
                   {product?.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-1" loading="lazy" />
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-2" loading="lazy" />
                   ) : (
-                    <Package className="w-4 h-4 text-gray-300" />
+                    <Package className="w-7 h-7 text-gray-300" />
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-extrabold text-xs text-gray-900 truncate">{product?.name}</p>
-                  <p className="text-[11px] text-green-700 font-bold truncate">
-                    {product?.regionalName || product?.catalogName || 'Name not added'}
-                  </p>
-                  <p className="text-[10px] text-gray-400 truncate">
-                    {product?.brand ? `${product.brand} · ` : ''}{packSize} {unit} · Reorder at {inv.reorderPoint}
-                  </p>
+                <div className="mt-2 min-w-0">
+                  <p className="font-extrabold text-[11px] leading-4 text-gray-900 line-clamp-2 min-h-8">{product?.name || 'Unnamed item'}</p>
+                  <p className="text-[10px] text-gray-500 truncate">{packSize} {unit} · Reorder at {inv.reorderPoint}</p>
                 </div>
 
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className={`text-[10px] font-extrabold ${isLow ? 'text-amber-600' : inv.stockQuantity === 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                    {isLow ? 'LOW' : `${totalQuantity} ${unit}`}
+                <div className="mt-2 flex items-center justify-between gap-1">
+                  <span className={`text-[10px] font-extrabold ${inv.stockQuantity === 0 ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-green-700'}`}>
+                    {inv.stockQuantity === 0 ? 'OUT' : isLow ? 'LOW' : `${totalQuantity} ${unit}`}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden">
+                  <span className="text-xs font-black text-gray-900">{inv.stockQuantity}</span>
+                </div>
+
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="flex flex-1 items-center justify-between rounded-xl border border-gray-200 bg-white overflow-hidden">
                       <button
                         type="button"
                         onClick={() => quickAdjustStock(inv, -1)}
                         disabled={adjustingStockId === inv._id || inv.stockQuantity <= 0}
-                        className="p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="p-2 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Decrease stock by 1 item"
                         aria-label={`Decrease ${product?.name} stock`}
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="min-w-7 text-center text-[11px] font-black text-gray-800">{inv.stockQuantity}</span>
+                      <span className="text-[11px] font-black text-gray-800">{inv.stockQuantity}</span>
                       <button
                         type="button"
                         onClick={() => quickAdjustStock(inv, 1)}
                         disabled={adjustingStockId === inv._id}
-                        className="p-1.5 text-green-700 hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="p-2 text-green-700 hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Increase stock by 1 item"
                         aria-label={`Increase ${product?.name} stock`}
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
-                    </div>
-                    <button
+                  </div>
+                  <button
                       type="button"
                       onClick={() => quickAdjustStock(inv, 10)}
                       disabled={adjustingStockId === inv._id}
                       title="Add 10 items quickly"
-                      className="px-2 py-1.5 bg-green-50 text-green-700 active:bg-green-100 border border-green-200 rounded-xl text-[10px] font-extrabold transition active:scale-95"
+                      className="px-2 py-2 bg-green-50 text-green-700 active:bg-green-100 border border-green-200 rounded-xl text-[10px] font-extrabold transition active:scale-95"
                     >
                       +10
-                    </button>
-                    <button
+                  </button>
+                  <button
                       type="button"
                       onClick={() => openAdjustModal(inv, 'PURCHASE')}
-                      className="px-1.5 py-1.5 text-[10px] font-bold text-gray-500 hover:text-gray-800"
+                      className="p-2 text-[10px] font-bold text-gray-500 hover:text-gray-800"
                       title="Enter a custom stock adjustment"
                     >
                       Edit
-                    </button>
-                    <button
+                  </button>
+                  <button
                       onClick={() => viewHistory(inv)}
-                      className="p-1.5 border border-gray-200 text-gray-600 active:bg-gray-100 rounded-xl"
+                      className="p-2 border border-gray-200 text-gray-600 active:bg-gray-100 rounded-xl"
                       title="View Stock Log"
                     >
                       <History className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <label className="hidden sm:flex items-center gap-1 text-[9px] text-gray-400">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(product?.allowPartialSale)}
-                      disabled={partialSaleSavingId === product?._id}
-                      onChange={(e) => handlePartialSaleToggle(inv, e.target.checked)}
-                      className="accent-green-600 disabled:opacity-50"
-                    />
-                    Partial sale
-                  </label>
+                  </button>
                 </div>
               </div>
-            );
-                    })}
-                  </div>
-                )}
-              </section>
             );
           })}
         </div>
