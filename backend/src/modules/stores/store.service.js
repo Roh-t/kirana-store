@@ -84,9 +84,9 @@ export class StoreService {
     user.activeStoreId = store._id;
     await user.save();
 
-    // Initialize Default Subscription (14-Day Free Trial)
+    // Initialize the 30-day unlimited-item free trial.
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
     const subscription = await Subscription.create({
       storeId: store._id,
@@ -95,7 +95,7 @@ export class StoreService {
       startDate: new Date(),
       endDate: trialEndsAt,
       trialEndsAt,
-      maxProducts: 100,
+      maxProducts: -1,
       maxStaffUsers: 2
     });
 

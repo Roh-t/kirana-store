@@ -105,7 +105,7 @@ export const SubscriptionBanner = ({ storeId }) => {
   const expiryText = subscription.endDate
     ? new Date(subscription.endDate).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })
     : 'Not available';
-  const planText = plan === 'PREMIUM' ? 'Premium Plan (₹2)' : plan === 'PRO' ? 'Pro Plan (₹1)' : 'Free Trial';
+  const planText = plan === 'PREMIUM' ? 'Unlimited Plan (₹999)' : plan === 'PRO' ? '1,000 Items Plan (₹599)' : '30-Day Free Trial';
 
   return (
     <>
@@ -119,7 +119,7 @@ export const SubscriptionBanner = ({ storeId }) => {
               </div>
               <div>
                 <div className="text-[9px] font-black uppercase tracking-wider text-gray-400">
-                  {isTrial ? '14-DAY' : status}
+                  {isTrial ? '30-DAY' : status}
                 </div>
                 <div className="text-sm sm:text-base font-black text-gray-900 leading-tight">{planText}</div>
                 <div className="text-[10px] sm:text-xs text-gray-500 font-medium">
@@ -133,7 +133,7 @@ export const SubscriptionBanner = ({ storeId }) => {
                 onClick={() => setShowPlanModal(true)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-black transition active:scale-95"
               >
-                <span>{plan === 'PRO' ? 'Upgrade to ₹2' : 'View Plans'}</span>
+                <span>{plan === 'PRO' ? 'Upgrade to ₹999' : 'View Plans'}</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             )}
@@ -142,7 +142,7 @@ export const SubscriptionBanner = ({ storeId }) => {
           {isTrial && (
             <div className="mt-3">
               <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, (daysLeft / 14) * 100))}%` }} />
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, (daysLeft / 30) * 100))}%` }} />
               </div>
               <div className="mt-1 flex items-center justify-between text-[10px] font-bold">
                 <span className="text-gray-900">Trial ends {expiryText}</span>
@@ -269,11 +269,11 @@ export const SubscriptionBanner = ({ storeId }) => {
                 <div>
                   <h4 className="font-black text-gray-900 text-sm">PRO PLAN</h4>
                   <div className="mt-0.5 flex items-baseline gap-1">
-                    <span className="text-xl font-black text-green-700">₹1</span>
+                    <span className="text-xl font-black text-green-700">₹599</span>
                     <span className="text-[10px] text-gray-500 font-bold">/ month</span>
                   </div>
                   <ul className="mt-2 space-y-1 text-[11px] text-gray-700 font-medium">
-                    <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-600 shrink-0" /> Up to 1,000 Products</li>
+                    <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-600 shrink-0" /> Up to 1,000 Items</li>
                     <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-600 shrink-0" /> Up to 10 Staff Accounts</li>
                   </ul>
                 </div>
@@ -283,7 +283,7 @@ export const SubscriptionBanner = ({ storeId }) => {
                   className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 active:scale-95 transition"
                 >
                   <Zap className="w-3 h-3" />
-                  {upgrading ? 'Processing...' : 'Pay ₹1'}
+                  {upgrading ? 'Processing...' : 'Pay ₹599'}
                 </button>
               </div>
 
@@ -292,11 +292,11 @@ export const SubscriptionBanner = ({ storeId }) => {
                 <div>
                   <h4 className="font-black text-gray-900 text-sm">PREMIUM PLAN</h4>
                   <div className="mt-0.5 flex items-baseline gap-1">
-                    <span className="text-xl font-black text-purple-800">₹2</span>
+                    <span className="text-xl font-black text-purple-800">₹999</span>
                     <span className="text-[10px] text-gray-500 font-bold">/ month</span>
                   </div>
                   <ul className="mt-2 space-y-1 text-[11px] text-gray-700 font-medium">
-                    <li className="flex items-center gap-1"><Crown className="w-3 h-3 text-purple-600 shrink-0" /> Unlimited Products & Staff</li>
+                    <li className="flex items-center gap-1"><Crown className="w-3 h-3 text-purple-600 shrink-0" /> Unlimited Items & Staff</li>
                     <li className="flex items-center gap-1"><Crown className="w-3 h-3 text-purple-600 shrink-0" /> AI / Voice Assistant</li>
                   </ul>
                 </div>
@@ -306,7 +306,7 @@ export const SubscriptionBanner = ({ storeId }) => {
                   className="w-full py-2 bg-purple-700 hover:bg-purple-800 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 active:scale-95 transition"
                 >
                   <Crown className="w-3 h-3" />
-                  {upgrading ? 'Processing...' : 'Pay ₹2'}
+                  {upgrading ? 'Processing...' : 'Pay ₹999'}
                 </button>
               </div>
             </div>

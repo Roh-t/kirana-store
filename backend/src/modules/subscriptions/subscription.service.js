@@ -8,7 +8,7 @@ export class SubscriptionService {
     let sub = await Subscription.findOne({ storeId });
     if (!sub) {
       const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
       sub = await Subscription.create({
         storeId,
@@ -17,9 +17,20 @@ export class SubscriptionService {
         startDate: new Date(),
         endDate: trialEndsAt,
         trialEndsAt,
-        maxProducts: 100,
+        maxProducts: -1,
         maxStaffUsers: 2
       });
+    }
+
+    if (sub.status === 'TRIAL' && sub.plan === 'FREE' && sub.startDate) {
+      const trialEndsAt = new Date(sub.startDate);
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+      if (!sub.endDate || sub.endDate < trialEndsAt) {
+        sub.endDate = trialEndsAt;
+        sub.trialEndsAt = trialEndsAt;
+        sub.maxProducts = -1;
+        await sub.save();
+      }
     }
 
     if (sub.endDate && sub.endDate <= new Date() && ['TRIAL', 'ACTIVE'].includes(sub.status)) {
@@ -80,7 +91,7 @@ export class SubscriptionService {
     }
 
     const planLimits = {
-      FREE: { maxProducts: 100, maxStaffUsers: 2 },
+      FREE: { maxProducts: -1, maxStaffUsers: 2 },
       PRO: { maxProducts: 1000, maxStaffUsers: 10 },
       PREMIUM: { maxProducts: -1, maxStaffUsers: -1 } // -1 = Unlimited
     };
