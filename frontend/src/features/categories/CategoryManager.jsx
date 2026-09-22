@@ -170,7 +170,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       indianSubCategory: String(row['Indian Sub-Category'] || '').trim(),
       unit: unitMap[quantityUnit] || 'PIECE',
       unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,
-      mrp: parseImportPrice(row['Original Price']),
+      mrp: parseImportPrice(row['Original Price']) ?? parseImportPrice(row.Price),
       sellingPrice: parseImportPrice(row.Price),
       imageUrl: String(row.Image || '').trim(),
       taxRate: 0

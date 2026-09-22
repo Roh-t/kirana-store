@@ -123,7 +123,7 @@ export class ProductService {
             imageUrl: row.imageUrl || masterProduct?.imageUrl || '',
             unit: row.unit || 'PIECE',
             unitQuantity: row.unitQuantity || 1,
-            mrp: normalizeImportPrice(row.mrp),
+            mrp: normalizeImportPrice(row.mrp) ?? normalizeImportPrice(row.sellingPrice),
             sellingPrice: normalizeImportPrice(row.sellingPrice),
             purchasePrice: row.purchasePrice || 0,
             taxRate: row.taxRate || 0

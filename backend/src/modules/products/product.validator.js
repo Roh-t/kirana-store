@@ -4,8 +4,8 @@ export class ProductValidator {
   static validateCreateProduct(data) {
     const errors = [];
 
-    if (!data.name || data.name.trim().length < 2 || data.name.trim().length > 150) {
-      errors.push({ field: 'name', message: 'Product name must be between 2 and 150 characters' });
+    if (!data.name || data.name.trim().length < 2 || data.name.trim().length > 400) {
+      errors.push({ field: 'name', message: 'Product name must be between 2 and 400 characters' });
     }
 
     if (!data.categoryId) {
