@@ -229,7 +229,18 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       onCategoryChanged?.();
       setImportResult(res.data);
     } catch (err) {
-      const details = err.details?.map((detail) => detail.reason || detail.message).join('; ');
+      const rawDetails = err.details;
+      const detailItems = Array.isArray(rawDetails)
+        ? rawDetails
+        : rawDetails && typeof rawDetails === 'object'
+          ? Object.entries(rawDetails).map(([field, detail]) => ({
+            message: `${field}: ${typeof detail === 'string' ? detail : detail?.message || JSON.stringify(detail)}`
+          }))
+          : [];
+      const details = detailItems
+        .map((detail) => detail?.reason || detail?.message || String(detail))
+        .filter(Boolean)
+        .join('; ');
       setImportError(details ? `${err.message}: ${details}` : err.message || 'Import failed. No products were added.');
     } finally {
       setIsImporting(false);
