@@ -110,12 +110,50 @@ export class InventoryService {
       );
       query.productId = { $in: matchingProducts.map((product) => product._id) };
     }
-    const categorySummaryProducts = await Product.find(productQuery).select('_id');
     const pageNumber = Math.max(Number(page) || 1, 1);
     const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const skip = (pageNumber - 1) * pageSize;
 
-    const [inventoryRecords, totalRecords, categoryRecords] = await Promise.all([
+    const categorySummaryMatch = { ...query };
+    delete categorySummaryMatch.productId;
+    const categorySummaryPipeline = [
+      { $match: categorySummaryMatch },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $match: {
+          'product.storeId': storeId,
+          'product.isDeleted': false,
+          ...(productQuery.categoryId ? { 'product.categoryId': productQuery.categoryId } : {})
+        }
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'product.categoryId',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: { $ifNull: ['$category.name', 'Other items'] },
+          count: { $sum: 1 }
+        }
+      },
+      { $project: { _id: 0, name: '$_id', count: 1 } },
+      { $sort: { name: 1 } }
+    ];
+
+    const [inventoryRecords, totalRecords, categorySummary] = await Promise.all([
       Inventory.find(query)
       .populate({
         path: 'productId',
@@ -126,27 +164,8 @@ export class InventoryService {
       .skip(skip)
       .limit(pageSize),
       Inventory.countDocuments(query),
-      Inventory.find({
-        ...query,
-        productId: { $in: categorySummaryProducts.map((product) => product._id) }
-      })
-        .populate({
-          path: 'productId',
-          select: 'categoryId',
-          populate: { path: 'categoryId', select: 'name' }
-        })
-        .select('productId')
-        .lean()
+      Inventory.aggregate(categorySummaryPipeline)
     ]);
-
-    const categoryCounts = categoryRecords.reduce((counts, record) => {
-      const name = record.productId?.categoryId?.name || 'Other items';
-      counts[name] = (counts[name] || 0) + 1;
-      return counts;
-    }, {});
-    const categorySummary = Object.entries(categoryCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((first, second) => first.name.localeCompare(second.name));
 
     return {
       inventory: inventoryRecords.filter((inv) => inv.productId),
