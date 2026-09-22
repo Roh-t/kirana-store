@@ -4,7 +4,7 @@ const productSchema = new mongoose.Schema(
   {
     storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true, index: true },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
-    name: { type: String, required: true, trim: true, minlength: 2, maxlength: 150 },
+    name: { type: String, required: true, trim: true, minlength: 2, maxlength: 400 },
     catalogName: { type: String, trim: true, default: null, maxlength: 400 },
     regionalName: { type: String, trim: true, default: null, maxlength: 400 },
     sourceName: { type: String, trim: true, default: null, maxlength: 400 },
