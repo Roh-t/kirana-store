@@ -8,6 +8,7 @@ import { SubscriptionService } from '../subscriptions/subscription.service.js';
 import { MasterProduct } from '../masterCatalog/masterProduct.model.js';
 import { ApiError } from '../../utils/apiError.js';
 import { createSearchAliases, transliterateHindi } from '../../utils/indianSearch.js';
+import { clearProductSearchIndex } from '../../utils/productSearch.util.js';
 
 const normalizeImportPrice = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -236,6 +237,7 @@ export class ProductService {
         { ordered: false }
       );
     }
+    clearProductSearchIndex(storeId);
 
     return {
       categoriesCreated: categoriesToCreate.length,
@@ -277,6 +279,7 @@ export class ProductService {
       reorderPoint: 5,
       trackInventory: true
     });
+    clearProductSearchIndex(storeId);
 
     return product;
   }
@@ -386,6 +389,7 @@ export class ProductService {
 
     product.updatedBy = userId;
     await product.save();
+    clearProductSearchIndex(storeId);
 
     return product;
   }
@@ -399,6 +403,7 @@ export class ProductService {
     product.isDeleted = true;
     product.isActive = false;
     await product.save();
+    clearProductSearchIndex(storeId);
 
     return { id: productId, deleted: true };
   }

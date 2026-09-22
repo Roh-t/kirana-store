@@ -3,9 +3,26 @@ import { InventoryTransaction } from './inventoryTransaction.model.js';
 import { Product } from '../products/product.model.js';
 import { Category } from '../categories/category.model.js';
 import { ApiError } from '../../utils/apiError.js';
-import { rankProducts } from '../../utils/productSearch.util.js';
+import {
+  getCachedProductSearchIndex,
+  getOrLoadProductSearchIndex,
+  prepareProductSearchIndex,
+  rankProducts
+} from '../../utils/productSearch.util.js';
 
 export class InventoryService {
+  static async loadProductSearchIndex(storeId) {
+    return getOrLoadProductSearchIndex(storeId, async () => {
+      const products = await Product.find({ storeId, isDeleted: false })
+        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId')
+        .populate('categoryId', 'name')
+        .lean();
+      return prepareProductSearchIndex(
+        products.map((product) => ({ ...product, categoryName: product.categoryId?.name || null }))
+      );
+    });
+  }
+
   static async ensureInventoryRecords(storeId) {
     const [productCount, inventoryCount] = await Promise.all([
       Product.countDocuments({ storeId, isDeleted: false }),
@@ -100,15 +117,23 @@ export class InventoryService {
 
     const hasProductFilter = Boolean((search && search.trim()) || (categoryName && categoryName.trim()));
     if (hasProductFilter) {
-      const searchableProducts = await Product.find(productQuery)
-        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId')
-        .populate('categoryId', 'name')
-        .lean();
+      const searchableProducts = search && search.trim()
+        ? await this.loadProductSearchIndex(storeId)
+        : await Product.find(productQuery)
+          .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId')
+          .populate('categoryId', 'name')
+          .lean()
+          .then((products) => products.map((product) => ({ ...product, categoryName: product.categoryId?.name || null })));
+      const filteredProducts = productQuery.categoryId
+        ? searchableProducts.filter((product) => product.categoryId?._id?.toString() === productQuery.categoryId.toString())
+        : searchableProducts;
       const matchingProducts = rankProducts(
-        searchableProducts.map((product) => ({ ...product, categoryName: product.categoryId?.name || null })),
+        filteredProducts,
         search
       );
       query.productId = { $in: matchingProducts.map((product) => product._id) };
+    } else if (!getCachedProductSearchIndex(storeId)) {
+      void this.loadProductSearchIndex(storeId).catch(() => {});
     }
     const pageNumber = Math.max(Number(page) || 1, 1);
     const pageSize = Math.min(Math.max(Number(limit) || 20, 1), 100);

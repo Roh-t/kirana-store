@@ -14,6 +14,8 @@ const SEARCH_FIELDS = [
   ['indianSubCategory', 3],
   ['categoryName', 3]
 ];
+const productSearchCache = new Map();
+const productSearchLoads = new Map();
 
 const normalize = (value) => String(value || '').toLocaleLowerCase().trim();
 const tokenize = (value) => normalize(value).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
@@ -50,6 +52,15 @@ const scoreToken = (queryToken, fieldTokens) => {
   return best;
 };
 
+const getSearchFieldTokens = (product) => product.__searchFields || SEARCH_FIELDS.map(([field]) => (
+  tokenize(field === 'categoryName' ? product.categoryName : product[field])
+));
+
+export const prepareProductSearchIndex = (products) => products.map((product) => ({
+  ...product,
+  __searchFields: getSearchFieldTokens(product)
+}));
+
 export const rankProducts = (products, query) => {
   const queryTokens = tokenize(query);
   if (queryTokens.length === 0) return products;
@@ -61,8 +72,8 @@ export const rankProducts = (products, query) => {
 
   return products
     .map((product, index) => {
-      const fields = SEARCH_FIELDS.map(([field, weight]) => ({
-        tokens: tokenize(field === 'categoryName' ? product.categoryName : product[field]),
+      const fields = SEARCH_FIELDS.map(([field, weight], fieldIndex) => ({
+        tokens: getSearchFieldTokens(product)[fieldIndex],
         weight
       }));
       const score = expandedTokens.reduce(
@@ -74,4 +85,29 @@ export const rankProducts = (products, query) => {
     .filter(({ score }) => score > 0)
     .sort((first, second) => second.score - first.score || first.index - second.index)
     .map(({ product }) => product);
+};
+
+export const getCachedProductSearchIndex = (storeId) => productSearchCache.get(String(storeId))?.products || null;
+
+export const getOrLoadProductSearchIndex = async (storeId, loader) => {
+  const key = String(storeId);
+  const cached = productSearchCache.get(key)?.products;
+  if (cached) return cached;
+
+  if (!productSearchLoads.has(key)) {
+    const load = Promise.resolve()
+      .then(loader)
+      .then((products) => {
+        productSearchCache.set(key, { products });
+        return products;
+      })
+      .finally(() => productSearchLoads.delete(key));
+    productSearchLoads.set(key, load);
+  }
+
+  return productSearchLoads.get(key);
+};
+
+export const clearProductSearchIndex = (storeId) => {
+  productSearchCache.delete(String(storeId));
 };
