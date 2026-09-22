@@ -147,17 +147,23 @@ export class ProductService {
       : [];
     const existingProductByKey = new Map(existingProducts.map((product) => [getImportProductKey(product), product]));
     const importProductKeys = new Set();
-    const categoryUpdates = [];
+    const productUpdates = [];
     const newProducts = validatedProducts
       .filter(({ product, row }) => {
         const key = getImportProductKey(product);
         const existingProduct = existingProductByKey.get(key);
         if (existingProduct || importProductKeys.has(key)) {
-          if (existingProduct && String(existingProduct.categoryId) !== String(product.categoryId)) {
-            categoryUpdates.push({
+          if (existingProduct) {
+            productUpdates.push({
               updateOne: {
                 filter: { _id: existingProduct._id, storeId, isDeleted: false },
-                update: { $set: { categoryId: product.categoryId, updatedBy: userId } }
+                update: {
+                  $set: {
+                    ...product,
+                    categoryId: product.categoryId,
+                    updatedBy: userId
+                  }
+                }
               }
             });
           }
@@ -192,8 +198,8 @@ export class ProductService {
         { $set: { isDeleted: false, isActive: true } }
       );
     }
-    if (categoryUpdates.length > 0) {
-      await Product.bulkWrite(categoryUpdates, { ordered: false });
+    if (productUpdates.length > 0) {
+      await Product.bulkWrite(productUpdates, { ordered: false });
     }
 
     const productsToCreate = newProducts.map((product) => ({
@@ -214,6 +220,29 @@ export class ProductService {
         reorderPoint: 5,
         trackInventory: true
       })));
+    }
+
+    const activeProducts = await Product.find({ storeId, isDeleted: false }).select('_id').lean();
+    if (activeProducts.length > 0) {
+      await Inventory.bulkWrite(
+        activeProducts.map((product) => ({
+          updateOne: {
+            filter: { storeId, productId: product._id },
+            update: {
+              $setOnInsert: {
+                storeId,
+                productId: product._id,
+                stockQuantity: 0,
+                reservedQuantity: 0,
+                reorderPoint: 5,
+                trackInventory: true
+              }
+            },
+            upsert: true
+          }
+        })),
+        { ordered: false }
+      );
     }
 
     return {

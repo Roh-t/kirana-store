@@ -87,7 +87,7 @@ export class InventoryService {
       Inventory.find(query)
       .populate({
         path: 'productId',
-        select: 'name catalogName regionalName brand unit unitQuantity allowPartialSale mrp sellingPrice barcode imageUrl isAvailable categoryId',
+        select: 'name catalogName regionalName sourceName sourceImage sourcePrice sourceOriginalPrice sourceQuantity exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand unit unitQuantity allowPartialSale mrp sellingPrice barcode imageUrl isAvailable categoryId',
         populate: { path: 'categoryId', select: 'name' }
       })
       .sort({ stockQuantity: 1 })
