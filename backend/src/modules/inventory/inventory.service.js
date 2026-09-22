@@ -14,7 +14,7 @@ export class InventoryService {
   static async loadProductSearchIndex(storeId) {
     return getOrLoadProductSearchIndex(storeId, async () => {
       const products = await Product.find({ storeId, isDeleted: false })
-        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId')
+        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand barcode categoryId isActive isAvailable')
         .populate('categoryId', 'name')
         .lean();
       return prepareProductSearchIndex(

@@ -7,6 +7,7 @@ const router = Router();
 // Public Unauthenticated Routes for Customers
 router.get('/stores/:slug', PublicController.getPublicStore);
 router.get('/stores/:slug/categories', PublicController.getPublicCategories);
+router.get('/stores/:slug/catalog/suggestions', PublicController.getPublicCatalogSuggestions);
 router.get('/stores/:slug/catalog', PublicController.getPublicCatalog);
 router.get('/stores/:slug/customer-orders/:phone', PublicController.getCustomerOrders);
 

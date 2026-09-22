@@ -42,6 +42,23 @@ export class PublicController {
     }
   }
 
+  static async getPublicCatalogSuggestions(req, res, next) {
+      try {
+        const suggestions = await PublicService.getPublicCatalogSuggestions(
+          req.params.slug,
+          req.query.search,
+          req.query.limit
+        );
+        return ApiResponse.success(res, {
+          statusCode: 200,
+          message: 'Public catalog suggestions loaded successfully',
+          data: suggestions
+        });
+      } catch (error) {
+        next(error);
+    }
+  }
+
   static async getCustomerOrders(req, res, next) {
     try {
       const history = await PublicService.getCustomerOrderHistory(req.params.slug, req.params.phone);

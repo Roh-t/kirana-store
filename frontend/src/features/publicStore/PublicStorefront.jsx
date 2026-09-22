@@ -16,6 +16,9 @@ export const PublicStorefront = ({ slug }) => {
   const [catalog, setCatalog] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [search, setSearch] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAiVoiceOpen, setIsAiVoiceOpen] = useState(false);
@@ -60,6 +63,37 @@ export const PublicStorefront = ({ slug }) => {
       controller.abort();
     };
   }, [slug, selectedCategory, search]);
+
+  useEffect(() => {
+    if (!slug || search.trim().length < 2) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setSuggestionsLoading(true);
+        const response = await publicService.getPublicCatalogSuggestions(slug, search.trim(), {
+          signal: controller.signal
+        });
+        setSuggestions(Array.isArray(response.data) ? response.data : []);
+        setShowSuggestions(true);
+      } catch (err) {
+        if (err.name !== 'CanceledError' && err.code !== 'ERR_CANCELED') {
+          setSuggestions([]);
+        }
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [slug, search]);
 
   const nextOpeningLabel = store?.availability?.nextOpeningAt
     ? new Date(store.availability.nextOpeningAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
@@ -230,9 +264,48 @@ export const PublicStorefront = ({ slug }) => {
               type="text"
               placeholder="Search items (e.g. Atta, आटा, Oil)..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setShowSuggestions(true);
+              }}
               className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 focus:bg-white transition"
             />
+            {showSuggestions && search.trim().length >= 2 && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                {suggestionsLoading ? (
+                  <div className="px-3 py-2.5 text-xs text-gray-500">Finding matching items...</div>
+                ) : suggestions.length > 0 ? (
+                  suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion._id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setSearch(suggestion.catalogName || suggestion.name);
+                        setShowSuggestions(false);
+                      }}
+                      className="flex w-full items-center gap-2 border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:bg-green-50"
+                    >
+                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                        {suggestion.imageUrl ? (
+                          <img src={suggestion.imageUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-gray-400">ITEM</div>
+                        )}
+                      </div>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-bold text-gray-900">{suggestion.catalogName || suggestion.name}</span>
+                        <span className="block truncate text-[10px] text-gray-500">{suggestion.categoryName || 'Catalog item'}</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold text-green-700">₹{suggestion.sellingPrice}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2.5 text-xs text-gray-500">No matching items</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Category Horizontal Pill Tabs */}

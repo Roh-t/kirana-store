@@ -6,7 +6,11 @@ import { Order } from '../orders/order.model.js';
 import { Customer } from '../customers/customer.model.js';
 import { ApiError } from '../../utils/apiError.js';
 import { getStoreAvailability } from '../stores/storeHours.util.js';
-import { rankProducts } from '../../utils/productSearch.util.js';
+import {
+  getOrLoadProductSearchIndex,
+  prepareProductSearchIndex,
+  rankProducts
+} from '../../utils/productSearch.util.js';
 
 export class PublicService {
   static async getPublicStore(slug) {
@@ -86,6 +90,44 @@ export class PublicService {
       store,
       catalog
     };
+  }
+
+  static async getPublicCatalogSuggestions(slug, query = '', limit = 8) {
+    const store = await this.getPublicStore(slug);
+    const searchableProducts = await getOrLoadProductSearchIndex(store._id, async () => {
+      const products = await Product.find({ storeId: store._id, isDeleted: false })
+        .select('name catalogName regionalName sourceName exactCategory subCategory sourceCategory hindiName hinglishName indianCategory indianSubCategory brand unit unitQuantity imageUrl sellingPrice mrp categoryId isActive isAvailable')
+        .populate('categoryId', 'name slug')
+        .lean();
+      return prepareProductSearchIndex(
+        products.map((product) => ({ ...product, categoryName: product.categoryId?.name || null }))
+      );
+    });
+
+    const availableProducts = searchableProducts.filter((product) => product.isActive !== false && product.isAvailable !== false);
+    const rankedProducts = rankProducts(availableProducts, query);
+    if (rankedProducts.length === 0) return [];
+
+    const inventories = await Inventory.find({
+      storeId: store._id,
+      stockQuantity: { $gt: 0 },
+      productId: { $in: rankedProducts.map((product) => product._id) }
+    }).select('productId stockQuantity').lean();
+    const stockMap = new Map(inventories.map((inventory) => [inventory.productId.toString(), inventory.stockQuantity]));
+
+    return rankedProducts
+      .filter((product) => stockMap.has(product._id.toString()))
+      .slice(0, Math.min(Math.max(Number(limit) || 8, 1), 10))
+      .map((product) => ({
+        _id: product._id,
+        name: product.name,
+        catalogName: product.catalogName,
+        categoryName: product.categoryName,
+        imageUrl: product.imageUrl,
+        sellingPrice: product.sellingPrice,
+        mrp: product.mrp,
+        stockQuantity: stockMap.get(product._id.toString())
+      }));
   }
 
   static async getCustomerOrderHistory(slug, rawPhone) {

@@ -20,6 +20,13 @@ export const publicService = {
     return publicGet(`/public/stores/${slug}/catalog`, { params, ...config });
   },
 
+  async getPublicCatalogSuggestions(slug, query, config = {}) {
+    return publicGet(`/public/stores/${slug}/catalog/suggestions`, {
+      params: { search: query, limit: 8 },
+      ...config
+    });
+  },
+
   async getCustomerOrders(slug, phone) {
     return publicGet(`/public/stores/${slug}/customer-orders/${phone}`);
   }
