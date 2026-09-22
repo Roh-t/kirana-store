@@ -2,7 +2,23 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
-import { Tags, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Tags, Edit2, Trash2, Eye, EyeOff, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2, ExternalLink } from 'lucide-react';
+
+const ITEM_LIBRARY_URL = 'https://kirana-link.onrender.com/';
+const IMPORT_COLUMNS = [
+  'Image',
+  'Name',
+  'Exact Category',
+  'Price',
+  'Original Price',
+  'Quantity',
+  'Sub-Category',
+  'Category',
+  'Hindi Name',
+  'Hinglish Name',
+  'Indian Category',
+  'Indian Sub-Category'
+];
 
 export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   const [categories, setCategories] = useState([]);
@@ -96,6 +112,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       {
         Image: '',
         Name: 'Aashirvaad Atta - Superior MP Whole Wheat',
+        'Exact Category': 'Atta & Flour',
         Price: 320,
         'Original Price': 350,
         Quantity: '5 kg',
@@ -107,8 +124,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
         'Indian Sub-Category': 'आटा'
       }
     ]);
-    XLSX.utils.book_append_sheet(workbook, productsSheet, 'Indian Catalog');
-    XLSX.writeFile(workbook, 'indian-grocery-catalog-template.xlsx');
+    XLSX.utils.book_append_sheet(workbook, productsSheet, 'Clean Database');
+    XLSX.writeFile(workbook, 'products-template.xlsx');
   };
 
   const parseImportPrice = (rawValue) => {
@@ -120,12 +137,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
   };
 
   const normalizeImportProduct = (row) => {
-    const value = (...keys) => {
-      const key = Object.keys(row).find((candidate) => keys.some((name) => candidate.toLowerCase().trim() === name.toLowerCase()));
-      return key ? row[key] : '';
-    };
-    const quantityText = String(value('Quantity', 'Pack Size', 'Unit Quantity')).trim();
-    const quantityMatch = quantityText.match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|kilogram|kilograms|g|gm|gram|grams|l|litre|litres|liter|liters|ml|millilitre|millilitres|piece|pieces|pc|pcs|packet|packets|pack|dozen|dozens)?$/i);
+    const quantityText = String(row.Quantity ?? '').trim();
+    const quantityMatch = quantityText.match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|kilogram|kilograms|g|gm|gram|grams|l|litre|litres|liter|liters|ml|millilitre|millilitres|piece|pieces|pc|pcs|packet|packets|pack|combo|combos|set|sets|dozen|dozens|tablet|tablets)?/i);
     const quantityUnit = quantityMatch?.[2]?.toLowerCase();
     const unitMap = {
       kg: 'KG', kgs: 'KG', kilogram: 'KG', kilograms: 'KG',
@@ -133,22 +146,22 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
       l: 'LITRE', litre: 'LITRE', litres: 'LITRE', liter: 'LITRE', liters: 'LITRE',
       ml: 'ML', millilitre: 'ML', millilitres: 'ML',
       piece: 'PIECE', pieces: 'PIECE', pc: 'PIECE', pcs: 'PIECE',
-      packet: 'PACKET', packets: 'PACKET', pack: 'PACKET',
+      packet: 'PACKET', packets: 'PACKET', pack: 'PACKET', combo: 'PACKET', combos: 'PACKET',
+      set: 'PACKET', sets: 'PACKET', tablet: 'PIECE', tablets: 'PIECE',
       dozen: 'DOZEN', dozens: 'DOZEN'
     };
 
     return {
-      name: String(value('Hinglish Name', 'Name', 'Product Name')).trim(),
-      catalogName: String(value('Name', 'Product Name')).trim(),
-      regionalName: String(value('Hindi Name', 'Regional Name', 'RegionalName')).trim(),
-      categoryName: String(value('Indian Sub-Category', 'Category Name', 'CategoryName', 'Category', 'Alias')).trim(),
+      name: String(row['Hinglish Name'] || row.Name || '').trim(),
+      catalogName: String(row.Name || '').trim(),
+      regionalName: String(row['Hindi Name'] || '').trim(),
+      categoryName: String(row['Exact Category'] || '').trim(),
       unit: unitMap[quantityUnit] || 'PIECE',
       unitQuantity: quantityMatch ? Number(quantityMatch[1]) : 1,
-      mrp: parseImportPrice(value('Original Price', 'MRP')),
-      sellingPrice: parseImportPrice(value('Price', 'Selling Price')),
-      barcode: String(value('Barcode', 'EAN', 'UPC')).trim(),
-      imageUrl: String(value('Image', 'Image URL', 'ImageUrl')).trim(),
-      taxRate: value('Tax Rate', 'TaxRate') || 0
+      mrp: parseImportPrice(row['Original Price']),
+      sellingPrice: parseImportPrice(row.Price),
+      imageUrl: String(row.Image || '').trim(),
+      taxRate: 0
     };
   };
 
@@ -159,24 +172,28 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
 
     try {
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-      const readSheet = (name) => {
-        const sheetName = workbook.SheetNames.find((item) => item.toLowerCase() === name.toLowerCase());
-        return sheetName ? XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' }) : [];
-      };
-      const productsSheet = workbook.SheetNames.find((item) => item.toLowerCase() === 'products') || workbook.SheetNames[0];
-      const rawProducts = productsSheet
-        ? XLSX.utils.sheet_to_json(workbook.Sheets[productsSheet], { defval: '' })
-        : [];
+      const sheetName = workbook.SheetNames.find((item) => item === 'Clean Database');
+      if (!sheetName) {
+        throw new Error('The workbook must contain a sheet named "Clean Database".');
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const headerRow = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false })[0] || [];
+      const hasExactColumns = IMPORT_COLUMNS.length === headerRow.length
+        && IMPORT_COLUMNS.every((column, index) => headerRow[index] === column);
+      if (!hasExactColumns) {
+        throw new Error(`Use the products format only. Required columns: ${IMPORT_COLUMNS.join(', ')}`);
+      }
+
+      const rawProducts = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const nextData = {
-        categories: readSheet('Categories'),
+        categories: [],
         products: rawProducts.map(normalizeImportProduct)
       };
-      if (nextData.categories.length === 0) {
-        const categoryNames = [...new Set(nextData.products.map((product) => product.categoryName).filter(Boolean))];
-        nextData.categories = categoryNames.map((name, sortOrder) => ({ name, sortOrder }));
-      }
-      if (nextData.categories.length === 0 && nextData.products.length === 0) {
-        throw new Error('Add rows to the Categories or Products sheet before uploading.');
+      const categoryNames = [...new Set(nextData.products.map((product) => product.categoryName).filter(Boolean))];
+      nextData.categories = categoryNames.map((name, sortOrder) => ({ name, sortOrder }));
+      if (nextData.products.length === 0) {
+        throw new Error('Add product rows to the Clean Database sheet before uploading.');
       }
       setImportFile(file);
       setImportData(nextData);
@@ -232,17 +249,15 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
             <FileSpreadsheet className="w-3.5 h-3.5" />
             Import Excel
           </button>
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setFormData({ name: '', description: '', sortOrder: categories.length });
-              setShowModal(true);
-            }}
-            className="px-3 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
+          <a
+            href={ITEM_LIBRARY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1.5 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Add Category
-          </button>
+            <ExternalLink className="w-3.5 h-3.5" />
+            Browse Item Library
+          </a>
         </div>
       </div>
 
@@ -306,8 +321,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
           <div className="bg-white rounded-3xl max-w-lg w-full p-5 shadow-2xl border border-gray-200 space-y-4">
             <div className="flex items-start justify-between border-b border-gray-100 pb-3">
               <div>
-                <h4 className="font-bold text-gray-900 text-sm">Import Categories & Products</h4>
-                <p className="text-xs text-gray-500 mt-0.5">One workbook for your complete store catalog.</p>
+                <h4 className="font-bold text-gray-900 text-sm">Import Catalog Items</h4>
+                <p className="text-xs text-gray-500 mt-0.5">Use the products format for your complete store catalog.</p>
               </div>
               <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600" title="Close">
                 <X className="w-5 h-5" />
@@ -315,7 +330,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
             </div>
 
             <div className="rounded-2xl bg-green-50 border border-green-100 p-3 space-y-2">
-              <p className="text-xs text-green-900 font-semibold">Use the template so column names stay correct.</p>
+              <p className="text-xs text-green-900 font-semibold">Only the products.xlsx column format is supported.</p>
               <button type="button" onClick={downloadImportTemplate} className="text-xs font-bold text-green-700 flex items-center gap-1">
                 <Download className="w-3.5 h-3.5" /> Download Excel template
               </button>
@@ -331,7 +346,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
                   <strong className="block text-lg text-gray-900">{importData.categories.length}</strong>
-                  <span className="text-[11px] text-gray-500 font-semibold">Categories ready</span>
+                  <span className="text-[11px] text-gray-500 font-semibold">Categories detected</span>
                 </div>
                 <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
                   <strong className="block text-lg text-gray-900">{importData.products.length}</strong>

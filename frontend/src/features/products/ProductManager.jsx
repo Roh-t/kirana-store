@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import { adminService } from '../../services/adminService';
-import { Package, Plus, Search, Edit2, Trash2, Check, X, Barcode, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Search, Edit2, Trash2, Check, X, Barcode, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged }) => {
   const [products, setProducts] = useState([]);
@@ -214,7 +214,7 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 shadow-2xs space-y-3">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+      <div className="flex items-center border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-green-100 text-green-700 rounded-xl flex items-center justify-center font-bold">
             <Package className="w-4 h-4" />
@@ -225,16 +225,6 @@ export const ProductManager = ({ storeId, catalogVersion = 0, onCategoryChanged 
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="px-3 py-2 bg-green-600 active:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add Item
-        </button>
       </div>
 
       {/* Search & Category Filter Bar */}
