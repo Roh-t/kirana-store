@@ -8,14 +8,21 @@ const unitConversions = {
   PACKET: [{ unit: 'PACKET', factor: 1 }]
 };
 
+export const roundToTwoDecimals = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+export const formatQuantity = (value) => {
+  const rounded = roundToTwoDecimals(value);
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '');
+};
+
 export const getQuantityUnitOptions = (baseUnit) => unitConversions[baseUnit] || [{ unit: baseUnit, factor: 1 }];
 
 export const convertToBaseQuantity = (quantity, displayUnit, baseUnit) => {
   const option = getQuantityUnitOptions(baseUnit).find(({ unit }) => unit === displayUnit);
-  return Number(quantity) * (option?.factor || 1);
+  return roundToTwoDecimals(Number(quantity) * (option?.factor || 1));
 };
 
 export const convertFromBaseQuantity = (quantity, displayUnit, baseUnit) => {
   const option = getQuantityUnitOptions(baseUnit).find(({ unit }) => unit === displayUnit);
-  return Number(quantity) / (option?.factor || 1);
+  return roundToTwoDecimals(Number(quantity) / (option?.factor || 1));
 };

@@ -7,7 +7,7 @@ import { CustomerOrderHistoryModal } from './CustomerOrderHistoryModal';
 import { VoiceOrderAssistant } from '../ai/VoiceOrderAssistant';
 import { useAuth } from '../../context/AuthContext';
 import { storeService } from '../../services/storeService';
-import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
+import { convertFromBaseQuantity, convertToBaseQuantity, formatQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { Store, Search, MapPin, ShoppingBag, Plus, Minus, Clock, Sparkles, ArrowRight, AlertTriangle, X, Camera, ImagePlus } from 'lucide-react';
 
 export const PublicStorefront = ({ slug }) => {
@@ -379,11 +379,14 @@ export const PublicStorefront = ({ slug }) => {
                         inputMode="numeric"
                         min={product.allowPartialSale ? '0.001' : '1'}
                         step={product.allowPartialSale ? '0.001' : '1'}
-                        value={quantityDrafts[product._id] ?? displayQuantity}
-                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
+                        value={quantityDrafts[product._id] ?? formatQuantity(displayQuantity)}
+                        onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: formatQuantity(displayQuantity) }))}
                         onChange={(event) => {
                           if (product.allowPartialSale ? /^\d*\.?\d*$/.test(event.target.value) : /^\d*$/.test(event.target.value)) {
-                            setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                            const decimalValue = event.target.value.split('.')[1];
+                            if (!decimalValue || decimalValue.length <= 2) {
+                              setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                            }
                           }
                         }}
                         onBlur={(event) => {

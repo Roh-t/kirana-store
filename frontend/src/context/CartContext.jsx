@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { roundToTwoDecimals } from '../utils/quantityUnits';
 
 const CartContext = createContext(null);
 
@@ -34,14 +35,14 @@ export const CartProvider = ({ slug, children }) => {
     const unitPrice = product.allowPartialSale
       ? product.sellingPrice / (product.unitQuantity || 1)
       : product.sellingPrice;
-    return quantity * unitPrice;
+    return roundToTwoDecimals(quantity * unitPrice);
   };
 
   const updateQuantity = (product, delta) => {
     setItems((prev) => {
       const existing = prev[product._id];
       const currentQty = existing ? existing.quantity : 0;
-      const newQty = Math.max(0, currentQty + delta);
+      const newQty = roundToTwoDecimals(Math.max(0, currentQty + delta));
 
       if (newQty === 0) {
         const copy = { ...prev };
@@ -61,7 +62,7 @@ export const CartProvider = ({ slug, children }) => {
   };
 
   const setQuantity = (product, quantity) => {
-    const nextQuantity = Number(quantity);
+    const nextQuantity = roundToTwoDecimals(quantity);
 
     if (!Number.isFinite(nextQuantity) || nextQuantity <= 0) return;
 

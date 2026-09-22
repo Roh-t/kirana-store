@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { convertFromBaseQuantity, convertToBaseQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
+import { convertFromBaseQuantity, convertToBaseQuantity, formatQuantity, getQuantityUnitOptions } from '../../utils/quantityUnits';
 import { orderService } from '../../services/orderService';
 import { buildOwnerNewOrderWhatsAppLink } from '../../utils/whatsappLink';
 import { X, ShoppingBag, Plus, Minus, Trash2, MapPin, Phone, User, Check } from 'lucide-react';
@@ -182,11 +182,14 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                           inputMode="numeric"
                           min={product.allowPartialSale ? '0.001' : '1'}
                           step={product.allowPartialSale ? '0.001' : '1'}
-                          value={quantityDrafts[product._id] ?? displayQuantity}
-                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: String(displayQuantity) }))}
+                          value={quantityDrafts[product._id] ?? formatQuantity(displayQuantity)}
+                          onFocus={() => setQuantityDrafts((prev) => ({ ...prev, [product._id]: formatQuantity(displayQuantity) }))}
                           onChange={(event) => {
                             if (product.allowPartialSale ? /^\d*\.?\d*$/.test(event.target.value) : /^\d*$/.test(event.target.value)) {
-                              setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                              const decimalValue = event.target.value.split('.')[1];
+                              if (!decimalValue || decimalValue.length <= 2) {
+                                setQuantityDrafts((prev) => ({ ...prev, [product._id]: event.target.value }));
+                              }
                             }
                           }}
                           onBlur={(event) => {
@@ -237,7 +240,7 @@ export const CartDrawer = ({ store, isOpen, onClose, onOrderPlaced }) => {
                         </button>
                       </div>
 
-                      <span className="text-[11px] font-extrabold text-gray-900 w-12 text-right">₹{lineTotal}</span>
+                      <span className="text-[11px] font-extrabold text-gray-900 w-12 text-right">₹{lineTotal.toFixed(2)}</span>
 
                       <button
                         onClick={() => removeFromCart(product._id)}
