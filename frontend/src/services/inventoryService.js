@@ -3,7 +3,8 @@ import apiClient from './apiClient';
 export const inventoryService = {
   async getInventorySummary(storeId) {
     return apiClient.get('/inventory/summary', {
-      headers: { 'X-Store-Id': storeId }
+      headers: { 'X-Store-Id': storeId },
+      timeout: 120000
     });
   },
 
@@ -11,6 +12,7 @@ export const inventoryService = {
     return apiClient.get('/inventory', {
       headers: { 'X-Store-Id': storeId },
       params,
+      timeout: 120000,
       ...config
     });
   },

@@ -28,6 +28,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('kf_token');
     }
