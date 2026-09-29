@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import { useState, useEffect } from 'react';
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
 import { Tags, Check, X, FileSpreadsheet, Download, Upload, ChevronDown, CheckCircle2, ExternalLink } from 'lucide-react';
@@ -106,7 +105,8 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     setShowModal(true);
   };
 
-  const downloadImportTemplate = () => {
+  const downloadImportTemplate = async () => {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
     const productsSheet = XLSX.utils.json_to_sheet([
       {
@@ -183,6 +183,7 @@ export const CategoryManager = ({ storeId, onCategoryChanged }) => {
     if (!file) return;
 
     try {
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       if (!sheetName) {

@@ -1,23 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-import { LoginPage } from './features/auth/LoginPage';
-import { RegisterPage } from './features/auth/RegisterPage';
-import { CreateStoreModal } from './features/stores/CreateStoreModal';
 import { StoreDashboardHeader } from './features/stores/StoreDashboardHeader';
-import { SubscriptionBanner } from './features/subscriptions/SubscriptionBanner';
-import { OrderQueueDashboard } from './features/orders/OrderQueueDashboard';
-import { CategoryManager } from './features/categories/CategoryManager';
-import { ProductManager } from './features/products/ProductManager';
-import { InventoryManager } from './features/inventory/InventoryManager';
-import { CustomerManager } from './features/customers/CustomerManager';
-import { StoreAnalyticsDashboard } from './features/analytics/StoreAnalyticsDashboard';
-import { StaffManager } from './features/stores/StaffManager';
-import { StoreTimingSettings } from './features/stores/StoreTimingSettings';
-import { AuditLogViewer } from './features/auditLogs/AuditLogViewer';
 import { NotificationFeed } from './features/notifications/NotificationFeed';
-import { SuperAdminDashboard } from './features/admin/SuperAdminDashboard';
-import { PublicStorefront } from './features/publicStore/PublicStorefront';
 import { HealthBadge } from './components/common/HealthBadge';
 import { InstallPwaBanner } from './components/common/InstallPwaBanner';
 import { storeService } from './services/storeService';
@@ -33,10 +18,32 @@ import {
   TrendingUp,
   Settings,
   ArrowUpRight,
-  Sprout,
-  CheckCircle2,
-  AlertCircle
+  Sprout
 } from 'lucide-react';
+
+const lazyNamed = (loader, exportName) =>
+  lazy(() => loader().then((module) => ({ default: module[exportName] })));
+
+const LoginPage = lazyNamed(() => import('./features/auth/LoginPage'), 'LoginPage');
+const RegisterPage = lazyNamed(() => import('./features/auth/RegisterPage'), 'RegisterPage');
+const CreateStoreModal = lazyNamed(() => import('./features/stores/CreateStoreModal'), 'CreateStoreModal');
+const SubscriptionBanner = lazyNamed(() => import('./features/subscriptions/SubscriptionBanner'), 'SubscriptionBanner');
+const OrderQueueDashboard = lazyNamed(() => import('./features/orders/OrderQueueDashboard'), 'OrderQueueDashboard');
+const CategoryManager = lazyNamed(() => import('./features/categories/CategoryManager'), 'CategoryManager');
+const ProductManager = lazyNamed(() => import('./features/products/ProductManager'), 'ProductManager');
+const InventoryManager = lazyNamed(() => import('./features/inventory/InventoryManager'), 'InventoryManager');
+const CustomerManager = lazyNamed(() => import('./features/customers/CustomerManager'), 'CustomerManager');
+const StoreAnalyticsDashboard = lazyNamed(
+  () => import('./features/analytics/StoreAnalyticsDashboard'),
+  'StoreAnalyticsDashboard'
+);
+const StaffManager = lazyNamed(() => import('./features/stores/StaffManager'), 'StaffManager');
+const StoreTimingSettings = lazyNamed(() => import('./features/stores/StoreTimingSettings'), 'StoreTimingSettings');
+const AuditLogViewer = lazyNamed(() => import('./features/auditLogs/AuditLogViewer'), 'AuditLogViewer');
+const SuperAdminDashboard = lazyNamed(() => import('./features/admin/SuperAdminDashboard'), 'SuperAdminDashboard');
+const PublicStorefront = lazyNamed(() => import('./features/publicStore/PublicStorefront'), 'PublicStorefront');
+
+const LazyView = ({ children }) => <Suspense fallback={<div className="p-8 text-center text-xs text-gray-500">Loading...</div>}>{children}</Suspense>;
 
 function DashboardView() {
   const { user, logout } = useAuth();
@@ -383,7 +390,9 @@ function MainApp() {
   if (isPublicStoreRoute && storeSlug) {
     return (
       <CartProvider slug={storeSlug}>
-        <PublicStorefront slug={storeSlug} />
+        <LazyView>
+          <PublicStorefront slug={storeSlug} />
+        </LazyView>
         <InstallPwaBanner />
       </CartProvider>
     );
@@ -400,13 +409,15 @@ function MainApp() {
   return (
     <div className="min-h-screen bg-[#f8fafc]/90 flex flex-col items-center justify-start p-2.5 sm:p-4">
       <main className="w-full max-w-lg flex flex-col items-center gap-3">
-        {isAuthenticated ? (
-          <DashboardView />
-        ) : view === 'login' ? (
-          <LoginPage onSwitchToRegister={() => setView('register')} />
-        ) : (
-          <RegisterPage onSwitchToLogin={() => setView('login')} />
-        )}
+        <LazyView>
+          {isAuthenticated ? (
+            <DashboardView />
+          ) : view === 'login' ? (
+            <LoginPage onSwitchToRegister={() => setView('register')} />
+          ) : (
+            <RegisterPage onSwitchToLogin={() => setView('login')} />
+          )}
+        </LazyView>
 
         <div className="mt-1 w-full max-w-sm">
           <HealthBadge />
