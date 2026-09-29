@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Cookie, FileText, Mail, RotateCcw, ShieldCheck, Truck } from 'lucide-react';
 
-const SUPPORT_EMAIL = '[ADD SUPPORT EMAIL]';
+const SUPPORT_EMAIL = 'rohansingh18063@gmail.com';
 const EFFECTIVE_DATE = '[ADD LAST UPDATED DATE]';
 
 const legalPages = {
@@ -206,7 +206,7 @@ const legalPages = {
         heading: 'Support contact',
         paragraphs: [
           `Email: ${SUPPORT_EMAIL}`,
-          'Please replace the placeholder above before publishing payment-gateway onboarding materials. Include your account or store name, a clear description of the issue, and relevant transaction information. Do not send passwords, card numbers, UPI PINs, or other secret credentials.'
+          'Include your account or store name, a clear description of the issue, and relevant transaction information. Do not send passwords, card numbers, UPI PINs, or other secret credentials.'
         ]
       },
       {
@@ -338,15 +338,36 @@ function LegalPage({ pageKey }) {
 }
 
 export function LegalLinks() {
+  const links = [
+    { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck },
+    { href: '/terms-and-conditions', label: 'Terms', icon: FileText },
+    { href: '/refund-cancellation-policy', label: 'Refunds', icon: RotateCcw },
+    { href: '/shipping-delivery-policy', label: 'Shipping', icon: Truck },
+    { href: '/cookie-policy', label: 'Cookies', icon: Cookie },
+    { href: '/contact-us', label: 'Contact', icon: Mail }
+  ];
+
   return (
-    <nav aria-label="Legal information" className="flex max-w-sm flex-wrap justify-center gap-x-3 gap-y-1 px-2 pb-2 text-[10px] text-stone-500">
-      <a className="hover:text-emerald-700" href="/privacy-policy">Privacy</a>
-      <a className="hover:text-emerald-700" href="/terms-and-conditions">Terms</a>
-      <a className="hover:text-emerald-700" href="/refund-cancellation-policy">Refunds</a>
-      <a className="hover:text-emerald-700" href="/shipping-delivery-policy">Shipping</a>
-      <a className="hover:text-emerald-700" href="/cookie-policy">Cookies</a>
-      <a className="hover:text-emerald-700" href="/contact-us">Contact</a>
-    </nav>
+    <section className="w-full max-w-md rounded-2xl border border-stone-200 bg-white/80 px-3 py-3 shadow-sm" aria-label="Legal information and support">
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-500">Legal &amp; Support</p>
+        <a className="text-[10px] font-semibold text-emerald-700 hover:underline" href={`mailto:${SUPPORT_EMAIL}`}>
+          {SUPPORT_EMAIL}
+        </a>
+      </div>
+      <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Legal information">
+        {links.map(({ href, label, icon: Icon }) => (
+          <a
+            key={href}
+            href={href}
+            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2 py-2 text-[10px] font-bold text-stone-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            {label}
+          </a>
+        ))}
+      </nav>
+    </section>
   );
 }
 
