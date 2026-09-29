@@ -6,6 +6,7 @@ import { NotificationFeed } from './features/notifications/NotificationFeed';
 import { HealthBadge } from './components/common/HealthBadge';
 import { InstallPwaBanner } from './components/common/InstallPwaBanner';
 import { storeService } from './services/storeService';
+import { LegalLinks, LegalRoute } from './pages/LegalPages';
 import {
   LogOut,
   ShieldCheck,
@@ -44,6 +45,15 @@ const SuperAdminDashboard = lazyNamed(() => import('./features/admin/SuperAdminD
 const PublicStorefront = lazyNamed(() => import('./features/publicStore/PublicStorefront'), 'PublicStorefront');
 
 const LazyView = ({ children }) => <Suspense fallback={<div className="p-8 text-center text-xs text-gray-500">Loading...</div>}>{children}</Suspense>;
+
+const legalRoutes = {
+  '/privacy-policy': 'privacy',
+  '/terms-and-conditions': 'terms',
+  '/refund-cancellation-policy': 'refund',
+  '/shipping-delivery-policy': 'shipping',
+  '/contact-us': 'contact',
+  '/cookie-policy': 'cookies'
+};
 
 function DashboardView() {
   const { user, logout } = useAuth();
@@ -386,6 +396,11 @@ function MainApp() {
   const path = window.location.pathname;
   const isPublicStoreRoute = path.startsWith('/s/');
   const storeSlug = isPublicStoreRoute ? path.split('/s/')[1] : null;
+  const legalPage = legalRoutes[path];
+
+  if (legalPage) {
+    return <LegalRoute pageKey={legalPage} />;
+  }
 
   if (isPublicStoreRoute && storeSlug) {
     return (
@@ -422,6 +437,8 @@ function MainApp() {
         <div className="mt-1 w-full max-w-sm">
           <HealthBadge />
         </div>
+
+        {!isAuthenticated && <LegalLinks />}
 
         <InstallPwaBanner />
       </main>
